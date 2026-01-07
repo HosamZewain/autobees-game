@@ -101,10 +101,11 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFFFFF7E6), Color(0xFFFFECB3)],
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 0.8,
+            colors: [Color(0xFFF3E8FF), Colors.white], // Purple tint to white
+            stops: [0.0, 1.0],
           ),
         ),
         child: Center(
@@ -116,23 +117,22 @@ class _SplashScreenState extends State<SplashScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SlideTransition(
-                      // Added
-                      position: _floatAnimation, // Added
+                      position: _floatAnimation,
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white.withOpacity(0.8),
-                          boxShadow: const [
+                          color: Colors.white,
+                          boxShadow: [
                             BoxShadow(
-                              color: Colors.black12,
+                              color: const Color(0xFFA855F7)
+                                  .withOpacity(0.2), // Purple shadow
                               blurRadius: 30,
                               spreadRadius: 10,
                             )
                           ],
                         ),
                         child: Hero(
-                          // Added
                           tag: 'app_logo', // Added
                           child: Image.asset(
                             'assets/images/app_icon.png',
@@ -147,8 +147,8 @@ class _SplashScreenState extends State<SplashScreen>
                       'أوتوبيس كومبليت',
                       style: TextStyle(
                         fontSize: 38, // Changed from 36
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF5D4037),
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF4B0082), // Deep Purple
                         fontFamily: 'Cairo',
                         // Removed letterSpacing: 1.2,
                       ),
@@ -156,26 +156,24 @@ class _SplashScreenState extends State<SplashScreen>
                     const SizedBox(height: 20), // Changed from 10
                     // Rotating Tips
                     AnimatedSwitcher(
-                      // Added
-                      duration: const Duration(milliseconds: 500), // Added
+                      duration: const Duration(milliseconds: 500),
                       child: Text(
-                        // Added
-                        _tips[_currentTipIndex], // Added
-                        key: ValueKey<int>(_currentTipIndex), // Added
-                        textAlign: TextAlign.center, // Added
-                        style: TextStyle(
-                          // Added
-                          fontSize: 16, // Added
-                          color: Colors.brown.withOpacity(0.8), // Added
-                          fontFamily: 'Cairo', // Added
-                          fontStyle: FontStyle.italic, // Added
+                        _tips[_currentTipIndex],
+                        key: ValueKey<int>(_currentTipIndex),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF6B7280), // Muted Gray
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
                     const SizedBox(height: 60),
                     if (!auth.isInitialized)
                       const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.amber),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFFA855F7)), // Purple
                       ),
                   ],
                 ),

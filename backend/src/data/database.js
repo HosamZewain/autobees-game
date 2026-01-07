@@ -175,6 +175,17 @@ async function initDatabase() {
             UNIQUE(word, category)
         )`);
 
+        // 7. Match Participants Table (For History)
+        await pool.query(`CREATE TABLE IF NOT EXISTS match_participants (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            match_id INT NOT NULL,
+            user_id INT NOT NULL,
+            score INT DEFAULT 0,
+            is_winner TINYINT DEFAULT 0,
+            FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`);
+
         console.log('Database tables ready.');
     } catch (err) {
         console.error('Error initializing database:', err);
@@ -237,6 +248,14 @@ async function updateUserProfile(id, username, passwordHash, dob, gender, profil
 }
 
 // --- Admin Helpers ---
+
+async function getTopPlayers(limit = 10) {
+    const lim = parseInt(limit) || 10;
+    const [rows] = await pool.query(
+        'SELECT username, total_score, profile_pic FROM users ORDER BY total_score DESC LIMIT ' + lim
+    );
+    return rows;
+}
 
 async function getAllUsers() {
     const [rows] = await pool.execute('SELECT id, username, email, wins, losses, total_score, role, is_active FROM users ORDER BY id DESC');
@@ -334,11 +353,51 @@ async function deleteWord(id) {
 }
 
 async function logMatch(roomId, details) {
-    await pool.execute('INSERT INTO matches (room_id, details) VALUES (?, ?)', [roomId, JSON.stringify(details)]);
+    const [result] = await pool.execute('INSERT INTO matches (room_id, details) VALUES (?, ?)', [roomId, JSON.stringify(details)]);
+    const matchId = result.insertId;
+
+    // Log participants for individual history
+    if (details.players && Array.isArray(details.players)) {
+        for (const p of details.players) {
+            // Check if player has a userId (registered user)
+            // If details.players only has name/score, we need to ensure we have userId.
+            // In finishGame (index.js), we constructed 'rankedPlayers' which has 'userId'.
+            // In logMatch call (index.js), we passed 'rankedPlayers.map(p => ({name: p.name, score: p.score}))'
+            // We need to pass userId in logMatch to properly link history!
+            // assuming we update index.js to pass userId in details.players
+
+            if (p.userId) {
+                const isWinner = (p.score == details.scores[p.id]) && (p.score > 0) && (p.score == Math.max(...details.players.map(pl => pl.score)));
+                // Simplified winner check: passed in details or calculated? 
+                // index.js calculates winner. Let's rely on score for now or just save raw.
+                // Better: index.js should flag winner.
+                const win = p.isWinner ? 1 : 0;
+
+                await pool.execute(
+                    'INSERT INTO match_participants (match_id, user_id, score, is_winner) VALUES (?, ?, ?, ?)',
+                    [matchId, p.userId, p.score, win]
+                );
+            }
+        }
+    }
 }
 
 async function getMatches(limit = 50) {
-    const [rows] = await pool.execute('SELECT * FROM matches ORDER BY played_at DESC LIMIT ?', [parseInt(limit)]);
+    const lim = parseInt(limit) || 50;
+    const [rows] = await pool.query('SELECT * FROM matches ORDER BY played_at DESC LIMIT ' + lim);
+    return rows;
+}
+
+async function getUserMatches(userId) {
+    // Join matches to get date and room info
+    const query = `
+        SELECT mp.*, m.played_at, m.room_id 
+        FROM match_participants mp
+        JOIN matches m ON mp.match_id = m.id
+        WHERE mp.user_id = ?
+        ORDER BY m.played_at DESC
+    `;
+    const [rows] = await pool.execute(query, [userId]);
     return rows;
 }
 
@@ -413,6 +472,7 @@ module.exports = {
     updateUserStats,
     updateUserProfile,
     getAllUsers,
+    getTopPlayers,
     updateUserStatus,
     adminUpdateUser,
     getSettings,
@@ -421,6 +481,7 @@ module.exports = {
     getDictionary,
     deleteWord,
     logMatch,
+    getUserMatches,
     getMatches,
     checkWord,
     suggestWord,

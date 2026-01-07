@@ -80,12 +80,53 @@ class GameController extends ChangeNotifier {
 
   Future<void> finishGame() async {
     _timer?.cancel();
+    _isPlaying = false; // Set playing to false immediately
+    await _calculateFinalScores(); // Call the new method to handle validation and logging
+    notifyListeners();
+  }
+
+  Future<void> _calculateFinalScores() async {
     _isValidating = true;
     notifyListeners();
 
-    await _validateAnswers();
+    await _validateAnswers(); // Use the existing _validateAnswers method
 
-    _isPlaying = false;
+    // Log to backend if logged in
+    final token = _authService.token; // Use the existing token getter
+    if (token != null) {
+      try {
+        final totalScore =
+            answers.values.fold(0, (sum, record) => sum + record.score);
+        final details = {
+          'players': [
+            {'name': 'You', 'score': totalScore}
+          ],
+          'config': {
+            'letter': _currentLetter,
+          },
+          'scores': {'solo': totalScore}
+        };
+
+        final url = Uri.parse(
+            '${AuthService.baseUrl.replaceAll('/api/auth', '')}/api/matches/log');
+        print('Logging game to: $url');
+        final response = await http.post(
+          url,
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          body: json.encode({'details': details}),
+        );
+        print('Log game response status: ${response.statusCode}');
+        if (response.statusCode != 200) {
+          print('Log game error: ${response.body}');
+        }
+      } catch (e) {
+        print('Failed to log solo game: $e');
+      }
+    }
+
     _isValidating = false;
     notifyListeners();
   }

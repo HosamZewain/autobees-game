@@ -59,20 +59,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('إنشاء حساب جديد'),
+        title: const Text('إنشاء حساب جديد',
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: const Color(0xFF5D4037),
+        centerTitle: true,
+        foregroundColor: const Color(0xFF4B0082), // Deep Purple
       ),
       extendBodyBehindAppBar: true,
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFFFF7E6), Color(0xFFFFECB3), Color(0xFFFFF8E1)],
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 0.8,
+            colors: [Color(0xFFF3E8FF), Colors.white], // Purple tint to white
+            stops: [0.0, 1.0],
           ),
         ),
         child: SingleChildScrollView(
@@ -84,8 +87,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 'انضم إلينا الآن',
                 style: TextStyle(
                   fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF5D4037),
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF4B0082), // Deep Purple
                   fontFamily: 'Cairo',
                 ),
               ),
@@ -93,10 +96,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const Text(
                 'خطوات بسيطة لتبدأ رحلتك في عالم الكلمات',
                 style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.brown,
-                  fontFamily: 'Cairo',
-                ),
+                    fontSize: 16,
+                    color: Color(0xFF6B7280), // Muted Gray
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 30),
 
@@ -105,7 +108,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const SizedBox(height: 15),
               // Avatar Selector
               SizedBox(
-                height: 100,
+                height: 110,
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: _avatars.length,
@@ -117,17 +120,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         margin: const EdgeInsets.symmetric(horizontal: 10),
-                        padding: EdgeInsets.all(isSelected ? 4 : 0),
+                        padding: EdgeInsets.all(isSelected ? 6 : 0),
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isSelected
-                              ? Colors.green.withOpacity(0.3)
-                              : Colors.transparent,
-                          border: isSelected
-                              ? Border.all(
-                                  color: const Color(0xFF66BB6A), width: 3)
-                              : null,
-                        ),
+                            shape: BoxShape.circle,
+                            color: isSelected
+                                ? const Color(0xFF4ADE80)
+                                    .withOpacity(0.2) // Green tint
+                                : Colors.white,
+                            border: isSelected
+                                ? Border.all(
+                                    color: const Color(0xFF22C55E),
+                                    width: 4) // Green Border
+                                : Border.all(color: Colors.transparent),
+                            boxShadow: [
+                              if (isSelected)
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFF22C55E).withOpacity(0.3),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 5),
+                                )
+                            ]),
                         child: CircleAvatar(
                           radius: isSelected ? 40 : 35,
                           backgroundColor: Colors.white,
@@ -146,14 +159,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _buildInputField(
                 controller: _usernameController,
                 label: 'اسم المستخدم (الاسم الكامل)',
-                icon: Icons.person_outline,
+                icon: Icons.person_rounded,
               ),
               const SizedBox(height: 20),
 
               _buildInputField(
                 controller: _emailController,
                 label: 'البريد الإلكتروني',
-                icon: Icons.email_outlined,
+                icon: Icons.email_rounded,
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 20),
@@ -166,17 +179,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   borderRadius: BorderRadius.circular(15),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      color: const Color(0xFFA855F7).withOpacity(0.05),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
                     )
                   ],
+                  border: Border.all(color: const Color(0xFFF3E8FF)),
                 ),
                 child: DropdownButtonFormField<String>(
                   value: _selectedGender,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
-                    icon: Icon(Icons.people_outline, color: Color(0xFF5D4037)),
+                    icon: Icon(Icons.people_rounded, color: Color(0xFFA855F7)),
                   ),
                   items: [
                     {'display': 'ذكر', 'value': 'Male'},
@@ -185,7 +199,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return DropdownMenuItem<String>(
                       value: item['value'],
                       child: Text(item['display']!,
-                          style: const TextStyle(fontFamily: 'Cairo')),
+                          style: const TextStyle(
+                              fontFamily: 'Cairo',
+                              fontWeight: FontWeight.bold)),
                     );
                   }).toList(),
                   onChanged: (val) => setState(() => _selectedGender = val!),
@@ -196,40 +212,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
               _buildInputField(
                 controller: _passwordController,
                 label: 'كلمة المرور',
-                icon: Icons.lock_outline,
+                icon: Icons.lock_rounded,
                 isPassword: true,
               ),
               const SizedBox(height: 40),
 
-              SizedBox(
+              Container(
                 width: double.infinity,
                 height: 55,
-                child: TweenAnimationBuilder<double>(
-                  tween:
-                      Tween<double>(begin: 1.0, end: _isLoading ? 0.95 : 1.0),
-                  duration: const Duration(milliseconds: 200),
-                  builder: (context, scale, child) => Transform.scale(
-                    scale: scale,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _register,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF66BB6A),
-                        foregroundColor: Colors.white,
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('إنشاء الحساب',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Cairo',
-                              )),
-                    ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFFA855F7),
+                      Color(0xFF7C3AED)
+                    ], // Purple Gradient
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED).withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    )
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _register,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15)),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('إنشاء الحساب',
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Cairo',
+                              color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 30),
@@ -237,8 +259,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const Text(
                 'بإنشاء حسابك، ستتمكن من حفظ تقدمك والمنافسة في لوحة الصدارة العالمية!',
                 style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.brown,
+                  fontSize: 13,
+                  color: Color(0xFF6B7280),
                   fontFamily: 'Cairo',
                 ),
                 textAlign: TextAlign.center,
@@ -255,15 +277,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Row(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFF5D4037),
-            borderRadius: BorderRadius.circular(10),
+            color: const Color(0xFFA855F7), // Purple
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             'خطوة $step',
             style: const TextStyle(
-                color: Colors.white, fontSize: 12, fontFamily: 'Cairo'),
+                color: Colors.white,
+                fontSize: 13,
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.bold),
           ),
         ),
         const SizedBox(width: 10),
@@ -272,7 +297,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF5D4037),
+            color: Color(0xFF4B0082), // Deep Purple
             fontFamily: 'Cairo',
           ),
         ),
@@ -293,20 +318,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFFA855F7).withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           )
         ],
+        border: Border.all(color: const Color(0xFFF3E8FF)),
       ),
       child: TextField(
         controller: controller,
         obscureText: isPassword,
         keyboardType: keyboardType,
         textAlign: TextAlign.right,
+        style:
+            const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF5D4037)),
+          labelStyle: TextStyle(color: Colors.grey[400], fontFamily: 'Cairo'),
+          prefixIcon: Icon(icon, color: const Color(0xFFA855F7)), // Purple
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 15),

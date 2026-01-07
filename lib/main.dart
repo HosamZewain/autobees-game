@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:autobees_complete/controllers/game_controller.dart';
 import 'package:autobees_complete/services/socket_service.dart';
 import 'package:autobees_complete/services/auth_service.dart';
@@ -39,10 +40,13 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Autobees Complete',
       theme: ThemeData(
-        fontFamily: 'Cairo',
-        primarySwatch: Colors.amber,
-        scaffoldBackgroundColor: const Color(0xFFFFF7E6),
-        useMaterial3: true, // Keep useMaterial3 from original theme
+        textTheme: GoogleFonts.cairoTextTheme(Theme.of(context).textTheme),
+        colorScheme: ColorScheme.fromSwatch().copyWith(
+          primary: const Color(0xFFA855F7), // Purple 500
+          secondary: const Color(0xFF22C55E), // Green 500
+        ),
+        scaffoldBackgroundColor: const Color(0xFFFDF4FF), // Very Light Purple
+        useMaterial3: true,
       ),
       home: const SplashScreen(),
       builder: (context, child) {

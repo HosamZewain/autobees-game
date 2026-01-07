@@ -91,81 +91,181 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('الجولة ${widget.initialData['currentRound']}'),
+        title: Text('الجولة ${widget.initialData['currentRound']}',
+            style: const TextStyle(
+                fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        automaticallyImplyLeading: false,
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xFF4B0082),
+        elevation: 0,
         actions: [
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Text(
-                '$_timeLeft ثانية',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: _timeLeft < 10 ? Colors.red : Colors.white,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
           Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.amber.shade100,
-            width: double.infinity,
-            child: Column(
+            margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+            decoration: BoxDecoration(
+              color: _timeLeft < 10
+                  ? const Color(0xFFEF4444) // Red
+                  : const Color(0xFFA855F7), // Purple
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: (_timeLeft < 10
+                          ? const Color(0xFFEF4444)
+                          : const Color(0xFFA855F7))
+                      .withOpacity(0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            alignment: Alignment.center,
+            child: Row(
               children: [
-                const Text('حرف', style: TextStyle(fontSize: 16)),
+                const Icon(Icons.timer_rounded, color: Colors.white, size: 20),
+                const SizedBox(width: 5),
                 Text(
-                  _letter,
+                  '$_timeLeft',
                   style: const TextStyle(
-                      fontSize: 48, fontWeight: FontWeight.bold),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontFamily: 'Cairo'),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 16.0),
-                  child: TextField(
-                    controller: _controllers[category],
-                    enabled: !_submitted,
-                    textDirection: TextDirection.rtl,
-                    decoration: InputDecoration(
-                      labelText: category,
-                      border: const OutlineInputBorder(),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              height: 56,
-              child: ElevatedButton(
-                onPressed: _submitted ? null : _submitAnswers,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                ),
-                child: const Text('إرسال الإجابات',
-                    style: TextStyle(fontSize: 20)),
-              ),
-            ),
-          ),
+          )
         ],
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 0.8,
+            colors: [Color(0xFFF3E8FF), Colors.white], // Purple tint to white
+            stops: [0.0, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.all(16),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFA855F7).withOpacity(0.1),
+                      blurRadius: 15,
+                      offset: const Offset(0, 5),
+                    )
+                  ],
+                  border: Border.all(color: const Color(0xFFF3E8FF)),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Column(
+                  children: [
+                    const Text('حرف',
+                        style: TextStyle(
+                            fontSize: 18,
+                            color: Color(0xFF6B7280),
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold)),
+                    Text(
+                      _letter,
+                      style: const TextStyle(
+                          fontSize: 80,
+                          fontWeight: FontWeight.w900,
+                          color: Color(0xFF4B0082), // Deep Purple
+                          fontFamily: 'Cairo'),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _categories.length,
+                  itemBuilder: (context, index) {
+                    final category = _categories[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 15.0),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.03),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3))
+                          ],
+                        ),
+                        child: TextField(
+                          controller: _controllers[category],
+                          enabled: !_submitted,
+                          textAlign: TextAlign.right,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontFamily: 'Cairo'),
+                          textDirection: TextDirection.rtl,
+                          decoration: InputDecoration(
+                            labelText: category,
+                            labelStyle: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Cairo',
+                                color: Colors.grey),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 15),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            prefixIcon: const Icon(Icons.edit_rounded,
+                                color: Color(0xFFA855F7), size: 20),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    onPressed: _submitted ? null : _submitAnswers,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF22C55E), // Green
+                      foregroundColor: Colors.white,
+                      elevation: 5,
+                      shadowColor: const Color(0xFF22C55E).withOpacity(0.4),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                      disabledBackgroundColor: Colors.grey.shade300,
+                    ),
+                    child: _submitted
+                        ? const Text('تم الإرسال',
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold))
+                        : const Text('إرسال الإجابات',
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

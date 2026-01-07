@@ -77,13 +77,15 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('تسجيل الدخول'),
+        title: const Text('تسجيل الدخول',
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        foregroundColor: const Color(0xFF5D4037),
+        centerTitle: true,
+        foregroundColor: const Color(0xFF4B0082), // Deep Purple
         actions: [
           IconButton(
-            icon: const Icon(Icons.info_outline),
+            icon: const Icon(Icons.info_outline, color: Color(0xFF7C3AED)),
             onPressed: _showAboutDialog,
           ),
         ],
@@ -93,18 +95,19 @@ class _LoginScreenState extends State<LoginScreen> {
         width: double.infinity,
         height: double.infinity,
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFFFF7E6), Color(0xFFFFECB3), Color(0xFFFFFDE7)],
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 0.8,
+            colors: [Color(0xFFF3E8FF), Colors.white], // Purple tint to white
+            stops: [0.0, 1.0],
           ),
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 80.0),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 30.0, vertical: 100.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(height: 40),
               Hero(
                 tag: 'app_logo',
                 child: Container(
@@ -113,26 +116,26 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.brown.withOpacity(0.1),
-                        blurRadius: 20,
-                        spreadRadius: 5,
+                        color: const Color(0xFFA855F7).withOpacity(0.2),
+                        blurRadius: 25,
+                        offset: const Offset(0, 10),
                       )
                     ],
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(15.0),
                     child: Image.asset('assets/images/app_icon.png',
-                        width: 120, height: 120),
+                        width: 100, height: 100),
                   ),
                 ),
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: 40),
               const Text(
                 'مرحباً بك مجدداً',
                 style: TextStyle(
                   fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF5D4037),
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF4B0082), // Deep Purple
                   fontFamily: 'Cairo',
                 ),
               ),
@@ -140,53 +143,65 @@ class _LoginScreenState extends State<LoginScreen> {
               const Text(
                 'سجل دخولك لتبدأ التحدي والمنافسة',
                 style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.brown,
-                  fontFamily: 'Cairo',
-                ),
+                    fontSize: 16,
+                    color: Color(0xFF6B7280), // Muted Gray
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 40),
               _buildTextField(
                 controller: _emailController,
                 label: 'البريد الإلكتروني',
-                icon: Icons.email_outlined,
+                icon: Icons.email_rounded,
               ),
               const SizedBox(height: 20),
               _buildTextField(
                 controller: _passwordController,
                 label: 'كلمة المرور',
-                icon: Icons.lock_outline,
+                icon: Icons.lock_rounded,
                 isPassword: true,
               ),
               const SizedBox(height: 40),
-              SizedBox(
+
+              // Login Button with Gradient
+              Container(
                 width: double.infinity,
                 height: 55,
-                child: TweenAnimationBuilder<double>(
-                  tween:
-                      Tween<double>(begin: 1.0, end: _isLoading ? 0.95 : 1.0),
-                  duration: const Duration(milliseconds: 200),
-                  builder: (context, scale, child) => Transform.scale(
-                    scale: scale,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF66BB6A),
-                        foregroundColor: Colors.white,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-                      child: _isLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('دخول',
-                              style: TextStyle(
-                                  fontSize: 20, fontWeight: FontWeight.bold)),
-                    ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  gradient: const LinearGradient(
+                    colors: [
+                      Color(0xFF4ADE80),
+                      Color(0xFF22C55E)
+                    ], // Green Gradient
                   ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF22C55E).withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    )
+                  ],
+                ),
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15)),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('دخول',
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Cairo',
+                              color: Colors.white)),
                 ),
               ),
+
               const SizedBox(height: 20),
               TextButton(
                 onPressed: () {
@@ -198,33 +213,40 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: const Text(
                   'ليس لديك حساب؟ سجل الآن',
                   style: TextStyle(
-                    color: Color(0xFF5D4037),
+                    color: Color(0xFF7C3AED), // Purple
                     fontSize: 16,
-                    decoration: TextDecoration.underline,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Cairo',
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 30),
               // Game Info Summary
               Container(
                 padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(color: Colors.white),
-                ),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    border: Border.all(color: const Color(0xFFF3E8FF)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.purple.withOpacity(0.05),
+                        blurRadius: 10,
+                      )
+                    ]),
                 child: const Row(
                   children: [
-                    Icon(Icons.lightbulb_outline, color: Colors.amber),
-                    SizedBox(width: 10),
+                    Icon(Icons.lightbulb_rounded,
+                        color: Colors.amber, size: 28),
+                    SizedBox(width: 15),
                     Expanded(
                       child: Text(
                         'هل تعلم أن ملء جميع الفئات يمنحك نقاطاً مضاعفة؟ أسرع لتكون الفائز!',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF5D4037),
-                          fontFamily: 'Cairo',
-                        ),
+                            fontSize: 13,
+                            color: Color(0xFF4B5563),
+                            fontFamily: 'Cairo',
+                            height: 1.4),
                         textAlign: TextAlign.right,
                       ),
                     ),
@@ -250,19 +272,23 @@ class _LoginScreenState extends State<LoginScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: const Color(0xFFA855F7).withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           )
         ],
+        border: Border.all(color: const Color(0xFFF3E8FF)),
       ),
       child: TextField(
         controller: controller,
         obscureText: isPassword,
         textAlign: TextAlign.right,
+        style:
+            const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
         decoration: InputDecoration(
           labelText: label,
-          prefixIcon: Icon(icon, color: const Color(0xFF5D4037)),
+          labelStyle: TextStyle(color: Colors.grey[400], fontFamily: 'Cairo'),
+          prefixIcon: Icon(icon, color: const Color(0xFFA855F7)), // Purple Icon
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 15),

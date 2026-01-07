@@ -4,7 +4,7 @@ const { Server } = require("socket.io");
 const cors = require('cors');
 const path = require('path');
 const { register, login } = require('./src/controllers/authController');
-const { updateUserStats, db, logMatch, checkWord, suggestWord } = require('./src/data/database');
+const { updateUserStats, db, logMatch, checkWord, suggestWord, getTopPlayers } = require('./src/data/database');
 const { socketAuthMiddleware, expressAuthMiddleware } = require('./src/middleware/authMiddleware');
 const adminMiddleware = require('./src/middleware/adminMiddleware');
 const adminController = require('./src/controllers/adminController');
@@ -24,10 +24,11 @@ app.use(express.json());
 // Serve Static Admin Dashboard
 app.use('/admin', express.static(path.join(__dirname, 'admin-dashboard/dist')));
 
+// Serve Static Game Client (Web App)
+app.use(express.static(path.join(__dirname, '../web-app/dist')));
+
 // Public Auth Routes
-app.get('/login', (req, res) => {
-    res.redirect('/admin/login');
-});
+
 app.post('/api/auth/register', register);
 app.post('/api/auth/register', register);
 app.post('/api/auth/login', login);
@@ -54,6 +55,11 @@ adminRouter.post('/dictionary', adminController.addWord);
 adminRouter.post('/dictionary', adminController.addWord);
 adminRouter.delete('/dictionary/:id', adminController.deleteWord);
 adminRouter.get('/history', adminController.getMatchHistory);
+
+// Suggestions
+adminRouter.get('/suggestions', adminController.getSuggestions);
+adminRouter.post('/suggestions/:id/approve', adminController.approveSuggestion);
+adminRouter.delete('/suggestions/:id', adminController.deleteSuggestion);
 
 // Admin Stats (Logic lives here to access 'rooms')
 // Admin Stats (Logic lives here to access 'rooms')
@@ -98,6 +104,53 @@ adminRouter.get('/stats', async (req, res) => {
 
 app.use('/api/admin', adminRouter);
 
+// Public Match Routes
+app.post('/api/matches/log', expressAuthMiddleware, async (req, res) => {
+    try {
+        const { details } = req.body;
+        console.log(`[Match History] Logging solo game for user ${req.user.id}`);
+        // roomId for single player can be 'solo'
+        await logMatch('solo', details);
+
+        // Update User Stats for Solo Game
+        if (details && details.players && details.players.length > 0) {
+            const score = details.players[0].score || 0;
+            const isWin = score > 0; // Consider it a win if they got points
+            await updateUserStats(req.user.id, isWin, score);
+            console.log(`[Match History] Stats updated for user ${req.user.id}: Score=${score}, Win=${isWin}`);
+        }
+
+        console.log(`[Match History] Game logged successfully.`);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[Match History] Error logging game:', err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Helper route to get leaderboard
+app.get('/api/leaderboard', async (req, res) => {
+    try {
+        const topPlayers = await getTopPlayers(10);
+        res.json(topPlayers);
+    } catch (err) {
+        console.error('Leaderboard Error:', err);
+        res.status(500).json({ error: 'Failed to fetch leaderboard' });
+    }
+});
+
+// User Match History
+app.get('/api/history', expressAuthMiddleware, async (req, res) => {
+    try {
+        const { getUserMatches } = require('./src/data/database');
+        const history = await getUserMatches(req.user.id);
+        res.json(history);
+    } catch (err) {
+        console.error('History API Error:', err);
+        res.status(500).json({ error: 'Failed to fetch history' });
+    }
+});
+
 // Public Word Validation
 app.post('/api/dictionary/validate', expressAuthMiddleware, async (req, res) => {
     try {
@@ -123,6 +176,14 @@ app.post('/api/seed/admin', adminController.createFirstAdmin);
 // SPA Fallback for Admin Dashboard
 app.get(/^\/admin.*$/, (req, res) => {
     res.sendFile(path.join(__dirname, 'admin-dashboard/dist/index.html'));
+});
+
+// SPA Fallback for Game Client (Must be last)
+app.get('*', (req, res) => {
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'Not found' });
+    }
+    res.sendFile(path.join(__dirname, '../web-app/dist/index.html'));
 });
 
 // Socket.IO Middleware
@@ -152,15 +213,28 @@ io.on("connection", (socket) => {
 
     // Broadcast updated list to all clients
     io.emit("online_users", Array.from(onlineUsers.values()));
+    broadcastRoomsList();
 
     // Create Room
     socket.on("create_room", (config, callback) => {
         const roomId = generateRoomId();
+        // Ensure config is an object if a string was passed (backward compatibility/web fix)
+        let roomConfig = typeof config === 'string' ? { name: config } : config;
+
+        // Add defaults
+        roomConfig = {
+            rounds: 3,
+            timeLimit: 60,
+            categories: ["ولد", "بنت", "حيوان", "جماد", "نبات", "بلد", "شخصية مشهورة"],
+            ...roomConfig
+        };
+
         const room = {
             roomId,
             ownerId: socket.id,
+            ownerUserId: socket.user.id, // Persist owner by User ID
             players: [],
-            config,
+            config: roomConfig,
             status: "lobby", // lobby, playing, results, finished
             currentRound: 0,
             currentLetter: "",
@@ -171,17 +245,32 @@ io.on("connection", (socket) => {
 
         rooms.set(roomId, room);
         joinRoomLogic(socket, roomId, callback);
+        broadcastRoomsList();
     });
 
     // Join Room
-    socket.on("join_room", ({ roomId }, callback) => {
+    socket.on("join_room", (data, callback) => {
+        // Handle both string and object input
+        const roomId = (typeof data === 'object' && data.roomId) ? data.roomId : data;
         joinRoomLogic(socket, roomId, callback);
+        broadcastRoomsList();
     });
 
     // Start Game
-    socket.on("start_game", ({ roomId }) => {
+    socket.on("start_game", (data) => {
+        const roomId = (typeof data === 'object' && data.roomId) ? data.roomId : data;
         const room = rooms.get(roomId);
-        if (!room || room.ownerId !== socket.id) return;
+        console.log(`[Start Game] Request for ${roomId} from ${socket.id} (Owner: ${room?.ownerId}, OwnerUser: ${room?.ownerUserId})`);
+
+        if (!room) return;
+
+        // Allow start if socket.id matches OR persistent ownerUserId matches
+        const isOwner = room.ownerId === socket.id || (room.ownerUserId && room.ownerUserId === socket.user.id);
+
+        if (!isOwner) {
+            console.log(`[Start Game] Denied: Not owner.`);
+            return;
+        }
 
         room.status = "playing";
         room.currentRound = 1;
@@ -284,8 +373,20 @@ io.on("connection", (socket) => {
         // Remove from online users
         onlineUsers.delete(socket.id);
         io.emit("online_users", Array.from(onlineUsers.values()));
+        broadcastRoomsList();
     });
 });
+
+function broadcastRoomsList() {
+    const roomsList = Array.from(rooms.values()).map(r => ({
+        id: r.roomId,
+        name: r.config.name || `Room ${r.roomId}`,
+        players: r.players.length,
+        maxPlayers: 10,
+        status: r.status
+    }));
+    io.emit('rooms_list', roomsList);
+}
 
 // --- Helper Functions ---
 
@@ -297,6 +398,23 @@ function generateRoomId() {
     }
     if (rooms.has(result)) return generateRoomId();
     return result;
+}
+
+function emitRoomUpdate(roomId) {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    io.to(roomId).emit("room_updated", {
+        id: room.roomId, // Frontend expects .id
+        roomId: room.roomId,
+        players: room.players, // Array of player objects
+        config: room.config,
+        status: room.status,
+        ownerUserId: room.ownerUserId,
+        letter: room.currentLetter,
+        round: room.currentRound,
+        timeLeft: room.config.timeLimit // For reference
+    });
 }
 
 function joinRoomLogic(socket, roomId, callback) {
@@ -311,12 +429,24 @@ function joinRoomLogic(socket, roomId, callback) {
         return;
     }
 
-    const existing = room.players.find(p => p.id === socket.id);
-    if (!existing) {
+    const existingIndex = room.players.findIndex(p => p.userId === socket.user.id);
+    if (existingIndex !== -1) {
+        // Update socket ID for existing user (re-connection)
+        room.players[existingIndex].id = socket.id;
+
+        // If this user was the owner, update the ownerId to the new socket ID
+        if (room.ownerUserId === socket.user.id) {
+            room.ownerId = socket.id;
+            console.log(`[Join Room] Owner ${socket.user.username} reconnected. Updated ownerId to ${socket.id}`);
+        }
+
+        socket.join(roomId);
+    } else {
         const player = {
             id: socket.id,
             userId: socket.user.id,
             name: socket.user.username,
+            profile_pic: socket.user.profile_pic,
             score: 0
         };
         room.players.push(player);
@@ -324,13 +454,9 @@ function joinRoomLogic(socket, roomId, callback) {
         socket.join(roomId);
     }
 
-    io.to(roomId).emit("room_updated", {
-        roomId,
-        players: room.players,
-        config: room.config
-    });
+    emitRoomUpdate(roomId);
 
-    if (callback) callback({ roomId, config: room.config, players: room.players, ownerId: room.ownerId });
+    if (callback) callback({ roomId, config: room.config, players: room.players, ownerId: room.ownerId, ownerUserId: room.ownerUserId });
 }
 
 function startRound(roomId) {
@@ -340,6 +466,8 @@ function startRound(roomId) {
     const letter = ARABIC_LETTERS[Math.floor(Math.random() * ARABIC_LETTERS.length)];
     room.currentLetter = letter;
     room.status = "playing";
+
+    emitRoomUpdate(roomId); // Notify status change
 
     io.to(roomId).emit("game_started", {
         currentRound: room.currentRound,
@@ -415,6 +543,7 @@ async function finishGame(roomId) {
     io.to(roomId).emit("game_finished", {
         ranking: rankedPlayers
     });
+    emitRoomUpdate(roomId);
 }
 
 async function calculateScores(room, allAnswers) {
@@ -486,11 +615,7 @@ function handleDisconnect(socket) {
         const index = room.players.findIndex(p => p.id === socket.id);
         if (index !== -1) {
             room.players.splice(index, 1);
-            io.to(roomId).emit("room_updated", {
-                roomId,
-                players: room.players,
-                config: room.config
-            });
+            emitRoomUpdate(roomId);
 
             if (room.players.length === 0) {
                 rooms.delete(roomId);
@@ -499,6 +624,7 @@ function handleDisconnect(socket) {
     }
 }
 
-server.listen(3000, () => {
-    console.log('Autobees Backend running on port 3000');
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+    console.log(`Autobees Backend running on port ${PORT}`);
 });

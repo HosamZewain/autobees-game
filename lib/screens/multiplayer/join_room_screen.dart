@@ -51,41 +51,117 @@ class _JoinRoomScreenState extends State<JoinRoomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('انضمام لغرفة')),
-      body: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'اسمك',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.person),
-              ),
+      appBar: AppBar(
+        title: const Text('انضمام لغرفة',
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        foregroundColor: const Color(0xFF4B0082), // Deep Purple
+      ),
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 0.8,
+            colors: [Color(0xFFF3E8FF), Colors.white], // Purple tint to white
+            stops: [0.0, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                          color: const Color(0xFFA855F7).withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4))
+                    ],
+                    border: Border.all(color: const Color(0xFFF3E8FF)),
+                  ),
+                  child: TextField(
+                    controller: _nameController,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                        fontFamily: 'Cairo', fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      labelText: 'اسمك',
+                      labelStyle: TextStyle(
+                          color: Colors.grey[400], fontFamily: 'Cairo'),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 15),
+                      prefixIcon: const Icon(Icons.person_rounded,
+                          color: Color(0xFFA855F7)), // Purple
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                          color: const Color(0xFFA855F7).withOpacity(0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4))
+                    ],
+                    border: Border.all(color: const Color(0xFFF3E8FF)),
+                  ),
+                  child: TextField(
+                    controller: _codeController,
+                    textCapitalization: TextCapitalization.characters,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontFamily: 'Cairo',
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2),
+                    decoration: InputDecoration(
+                      labelText: 'رمز الغرفة (4 أحرف)',
+                      labelStyle: TextStyle(
+                          color: Colors.grey[400], fontFamily: 'Cairo'),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 15),
+                      prefixIcon: const Icon(Icons.key_rounded,
+                          color: Color(0xFFA855F7)), // Purple
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    onPressed: _isJoining ? null : _joinRoom,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF22C55E), // Green
+                      foregroundColor: Colors.white,
+                      elevation: 5,
+                      shadowColor: const Color(0xFF22C55E).withOpacity(0.4),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20)),
+                    ),
+                    child: _isJoining
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('انضمام',
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _codeController,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                labelText: 'رمز الغرفة (4 أحرف)',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.key),
-              ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isJoining ? null : _joinRoom,
-                child: _isJoining
-                    ? const CircularProgressIndicator()
-                    : const Text('انضمام', style: TextStyle(fontSize: 18)),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

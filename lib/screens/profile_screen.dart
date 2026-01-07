@@ -138,82 +138,106 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('الملف الشخصي والإعدادات'),
+        title: const Text('الملف الشخصي والإعدادات',
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Colors.amber,
-        foregroundColor: const Color(0xFF5D4037),
+        backgroundColor: Colors.transparent,
+        foregroundColor: const Color(0xFF4B0082), // Deep Purple
         elevation: 0,
       ),
+      extendBodyBehindAppBar: true,
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.amber, Color(0xFFFFF7E6)],
-            stops: [0.0, 0.3],
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 0.8,
+            colors: [Color(0xFFF3E8FF), Colors.white], // Purple tint to white
+            stops: [0.0, 1.0],
           ),
         ),
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20.0),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 20.0, vertical: 100.0),
           child: Form(
             key: _formKey,
             child: Column(
               children: [
                 // Avatar Section Card
-                Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(15.0),
-                    child: Column(
-                      children: [
-                        const Text('اختر شخصيتك',
-                            style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Cairo')),
-                        const SizedBox(height: 15),
-                        SizedBox(
-                          height: 90,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            itemCount: _avatars.length,
-                            itemBuilder: (context, index) {
-                              final avatar = _avatars[index];
-                              final isSelected = avatar == _selectedAvatar;
-                              return GestureDetector(
-                                onTap: () =>
-                                    setState(() => _selectedAvatar = avatar),
-                                child: Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(horizontal: 8),
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: isSelected
-                                        ? Border.all(
-                                            color: Colors.amber, width: 4)
-                                        : Border.all(
-                                            color: Colors.grey.shade200,
-                                            width: 1),
-                                  ),
-                                  child: CircleAvatar(
-                                    radius: 35,
-                                    backgroundColor: Colors.white,
-                                    child: Icon(Icons.person,
-                                        size: 40,
-                                        color: isSelected
-                                            ? Colors.amber
-                                            : Colors.grey),
-                                    // backgroundImage: AssetImage('assets/images/$avatar'),
-                                  ),
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFA855F7).withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      )
+                    ],
+                    border: Border.all(color: const Color(0xFFF3E8FF)),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text('اختر شخصيتك',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF4B0082),
+                              fontFamily: 'Cairo')),
+                      const SizedBox(height: 20),
+                      SizedBox(
+                        height: 90,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _avatars.length,
+                          itemBuilder: (context, index) {
+                            final avatar = _avatars[index];
+                            final isSelected = avatar == _selectedAvatar;
+                            return GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedAvatar = avatar),
+                              child: Container(
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  boxShadow: [
+                                    if (isSelected)
+                                      BoxShadow(
+                                        color: const Color(0xFF22C55E)
+                                            .withOpacity(0.3),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 5),
+                                      )
+                                  ],
+                                  border: isSelected
+                                      ? Border.all(
+                                          color: const Color(0xFF22C55E),
+                                          width: 3) // Green
+                                      : Border.all(
+                                          color: Colors.transparent, width: 0),
                                 ),
-                              );
-                            },
-                          ),
+                                child: CircleAvatar(
+                                  radius: isSelected ? 38 : 32,
+                                  backgroundColor: Colors.white,
+                                  backgroundImage:
+                                      AssetImage('assets/avatars/$avatar'),
+                                  onBackgroundImageError: (_, __) {
+                                    // Fallback if asset not found, though we should ensure they exist
+                                  },
+                                  child: avatar.startsWith('bee') ||
+                                          avatar.startsWith('avatar')
+                                      ? null
+                                      : const Icon(Icons.person,
+                                          color: Colors.grey),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 25),
@@ -221,14 +245,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 _buildProfileField(
                   controller: _usernameController,
                   label: 'اسم المستخدم',
-                  icon: Icons.person_outline,
+                  icon: Icons.person_rounded,
                 ),
                 const SizedBox(height: 16),
 
                 _buildProfileField(
                   controller: _passwordController,
                   label: 'كلمة المرور الجديدة (اختياري)',
-                  icon: Icons.lock_outline,
+                  icon: Icons.lock_rounded,
                   isPassword: true,
                   helper: 'اتركه فارغاً إذا كنت لا تريد تغييره',
                 ),
@@ -242,28 +266,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(15),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
+                          color: const Color(0xFFA855F7).withOpacity(0.05),
                           blurRadius: 10,
                           offset: const Offset(0, 4))
                     ],
+                    border: Border.all(color: const Color(0xFFF3E8FF)),
                   ),
                   child: DropdownButtonFormField<String>(
                     value: _selectedGender,
                     decoration: const InputDecoration(
                       labelText: 'النوع',
+                      labelStyle:
+                          TextStyle(fontFamily: 'Cairo', color: Colors.grey),
                       border: InputBorder.none,
                       icon:
-                          Icon(Icons.people_outline, color: Color(0xFF5D4037)),
+                          Icon(Icons.people_rounded, color: Color(0xFFA855F7)),
                     ),
                     items: const [
                       DropdownMenuItem(
                           value: 'Male',
                           child: Text('ذكر',
-                              style: TextStyle(fontFamily: 'Cairo'))),
+                              style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontWeight: FontWeight.bold))),
                       DropdownMenuItem(
                           value: 'Female',
                           child: Text('أنثى',
-                              style: TextStyle(fontFamily: 'Cairo'))),
+                              style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontWeight: FontWeight.bold))),
                     ],
                     onChanged: (val) => setState(() => _selectedGender = val),
                   ),
@@ -280,28 +311,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 5,
-                            offset: const Offset(0, 2))
+                            color: const Color(0xFFA855F7).withOpacity(0.05),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4))
                       ],
+                      border: Border.all(color: const Color(0xFFF3E8FF)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today_outlined,
-                            color: Color(0xFF5D4037)),
+                        const Icon(Icons.calendar_month_rounded,
+                            color: Color(0xFFA855F7)),
                         const SizedBox(width: 15),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('تاريخ الميلاد',
                                 style: TextStyle(
-                                    color: Colors.grey.shade600, fontSize: 12)),
+                                    color: Colors.grey.shade600,
+                                    fontSize: 12,
+                                    fontFamily: 'Cairo')),
                             Text(
                               _selectedDate == null
                                   ? 'غير محدد'
                                   : "${_selectedDate!.year}-${_selectedDate!.month}-${_selectedDate!.day}",
                               style: const TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Cairo'),
                             ),
                           ],
                         ),
@@ -312,24 +348,40 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const SizedBox(height: 40),
 
                 // Save Button
-                SizedBox(
+                Container(
                   width: double.infinity,
                   height: 55,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xFF4ADE80),
+                        Color(0xFF22C55E)
+                      ], // Green Gradient
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF22C55E).withOpacity(0.3),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      )
+                    ],
+                  ),
                   child: ElevatedButton(
                     onPressed: _isLoading ? null : _saveProfile,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
-                      foregroundColor: Colors.black,
-                      elevation: 4,
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15)),
                     ),
                     child: _isLoading
-                        ? const CircularProgressIndicator()
+                        ? const CircularProgressIndicator(color: Colors.white)
                         : const Text('حفظ التغييرات',
                             style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                                 fontFamily: 'Cairo')),
                   ),
                 ),
@@ -337,11 +389,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 TextButton.icon(
                   onPressed: _logout,
-                  icon: const Icon(Icons.logout, color: Colors.red),
+                  icon: const Icon(Icons.logout_rounded,
+                      color: Color(0xFFEF4444)),
                   label: const Text('تسجيل الخروج',
                       style: TextStyle(
-                          color: Colors.red,
-                          fontSize: 18,
+                          color: Color(0xFFEF4444), // Red
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Cairo')),
                 ),
@@ -367,19 +420,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
         borderRadius: BorderRadius.circular(15),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: const Color(0xFFA855F7).withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 4))
         ],
+        border: Border.all(color: const Color(0xFFF3E8FF)),
       ),
       child: TextFormField(
         controller: controller,
         obscureText: isPassword,
         textAlign: TextAlign.right,
+        style:
+            const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(color: Colors.grey[400], fontFamily: 'Cairo'),
           helperText: helper,
-          prefixIcon: Icon(icon, color: const Color(0xFF5D4037)),
+          helperStyle: const TextStyle(fontFamily: 'Cairo'),
+          prefixIcon: Icon(icon, color: const Color(0xFFA855F7)), // Purple
           border: InputBorder.none,
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 20, vertical: 15),

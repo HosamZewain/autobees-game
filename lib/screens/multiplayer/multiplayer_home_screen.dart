@@ -93,22 +93,51 @@ class _MultiplayerHomeScreenState extends State<MultiplayerHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('اللعب الجماعي'),
-        backgroundColor: Colors.purple,
-        foregroundColor: Colors.white,
+        title: const Text('اللعب الجماعي',
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        foregroundColor: const Color(0xFF4B0082), // Deep Purple
       ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.hub, size: 80, color: Colors.purple),
-              const SizedBox(height: 48),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton.icon(
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 0.8,
+            colors: [Color(0xFFF3E8FF), Colors.white], // Purple tint to white
+            stops: [0.0, 1.0],
+          ),
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFA855F7).withOpacity(0.2),
+                        blurRadius: 30,
+                        offset: const Offset(0, 15),
+                      )
+                    ],
+                  ),
+                  child: const Icon(Icons.hub_rounded,
+                      size: 80, color: Color(0xFFA855F7)),
+                ),
+                const SizedBox(height: 48),
+                _buildMultiplayerButton(
+                  context,
+                  title: 'إنشاء غرفة',
+                  icon: Icons.add_circle_rounded,
+                  color: const Color(0xFFA855F7), // Purple
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -116,23 +145,28 @@ class _MultiplayerHomeScreenState extends State<MultiplayerHomeScreen> {
                           builder: (_) => const CreateRoomScreen()),
                     );
                   },
-                  icon: const Icon(Icons.add_circle_outline, size: 28),
-                  label:
-                      const Text('إنشاء غرفة', style: TextStyle(fontSize: 20)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: OutlinedButton.icon(
+                const SizedBox(height: 20),
+                _buildMultiplayerButton(
+                  context,
+                  title: 'انضمام لغرفة',
+                  icon: Icons.login_rounded,
+                  color: const Color(0xFF22C55E), // Green
+                  isOutlined: false,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const JoinRoomScreen()),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+                _buildMultiplayerButton(
+                  context,
+                  title: 'لاعبين متصلين',
+                  icon: Icons.people_alt_rounded,
+                  color: const Color(0xFF3B82F6), // Blue
+                  isOutlined: true,
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -140,45 +174,61 @@ class _MultiplayerHomeScreenState extends State<MultiplayerHomeScreen> {
                           builder: (_) => const OnlineUsersScreen()),
                     );
                   },
-                  icon: const Icon(Icons.people),
-                  label: const Text('لاعبين متصلين',
-                      style: TextStyle(fontSize: 20)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.blue,
-                    side: const BorderSide(color: Colors.blue, width: 2),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16)),
-                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const JoinRoomScreen()),
-                    );
-                  },
-                  icon: const Icon(Icons.login, size: 28),
-                  label: const Text('انضمام لغرفة',
-                      style: TextStyle(fontSize: 20)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.purple,
-                    side: const BorderSide(color: Colors.purple, width: 2),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildMultiplayerButton(
+    BuildContext context, {
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+    bool isOutlined = false,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 70,
+      child: isOutlined
+          ? OutlinedButton.icon(
+              onPressed: onPressed,
+              icon: Icon(icon, size: 28),
+              label: Text(title,
+                  style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Cairo')),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: color,
+                side: BorderSide(color: color, width: 2),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                backgroundColor: Colors.white.withOpacity(0.8),
+              ),
+            )
+          : ElevatedButton.icon(
+              onPressed: onPressed,
+              icon: Icon(icon, size: 28, color: Colors.white),
+              label: Text(title,
+                  style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Cairo',
+                      color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: color,
+                elevation: 5,
+                shadowColor: color.withOpacity(0.4),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
     );
   }
 }

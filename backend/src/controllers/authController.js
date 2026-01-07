@@ -6,7 +6,7 @@ const SECRET_KEY = 'your_super_secret_key_change_in_prod'; // In a real app, use
 
 async function register(req, res) {
     try {
-        const { username, email, password, gender, profile_pic } = req.body;
+        const { username, email, password, gender = null, profile_pic = null } = req.body;
 
         if (!username || !email || !password) {
             return res.status(400).json({ error: 'All fields are required' });

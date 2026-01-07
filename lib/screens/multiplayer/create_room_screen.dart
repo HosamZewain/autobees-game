@@ -66,64 +66,188 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('إنشاء غرفة')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('عدد الجولات',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Slider(
-              value: _rounds.toDouble(),
-              min: 1,
-              max: 5,
-              divisions: 4,
-              label: _rounds.toString(),
-              onChanged: (val) => setState(() => _rounds = val.toInt()),
+      appBar: AppBar(
+        title: const Text('إنشاء غرفة',
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        foregroundColor: const Color(0xFF4B0082), // Deep Purple
+      ),
+      extendBodyBehindAppBar: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: RadialGradient(
+            center: Alignment(0, -0.6),
+            radius: 0.8,
+            colors: [Color(0xFFF3E8FF), Colors.white], // Purple tint to white
+            stops: [0.0, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('عدد الجولات',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Cairo',
+                        color: Color(0xFF4B0082))),
+                const SizedBox(height: 10),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFA855F7).withOpacity(0.05),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      )
+                    ],
+                    border: Border.all(color: const Color(0xFFF3E8FF)),
+                  ),
+                  child: Column(
+                    children: [
+                      SliderTheme(
+                        data: SliderTheme.of(context).copyWith(
+                          activeTrackColor: const Color(0xFFA855F7),
+                          inactiveTrackColor: Colors.purple.shade100,
+                          thumbColor: const Color(0xFF4B0082),
+                          overlayColor: Colors.purple.withOpacity(0.2),
+                          valueIndicatorColor: const Color(0xFFA855F7),
+                          valueIndicatorTextStyle: const TextStyle(
+                              color: Colors.white, fontFamily: 'Cairo'),
+                        ),
+                        child: Slider(
+                          value: _rounds.toDouble(),
+                          min: 1,
+                          max: 5,
+                          divisions: 4,
+                          label: _rounds.toString(),
+                          onChanged: (val) =>
+                              setState(() => _rounds = val.toInt()),
+                        ),
+                      ),
+                      Text('$_rounds جولات',
+                          style: const TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF4B5563))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text('وقت الجولة (بالثواني)',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Cairo',
+                        color: Color(0xFF4B0082))),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [30, 60, 90].map((t) {
+                    final isSelected = _timeLimit == t;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      child: ChoiceChip(
+                        label: Text('$t ثانية',
+                            style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.grey[600])),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) setState(() => _timeLimit = t);
+                        },
+                        selectedColor: const Color(0xFFA855F7), // Purple
+                        backgroundColor: Colors.white,
+                        elevation: isSelected ? 4 : 1,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                        side: BorderSide(
+                          color: isSelected
+                              ? Colors.transparent
+                              : Colors.grey[300]!,
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 24),
+                const Text('الفئات',
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'Cairo',
+                        color: Color(0xFF4B0082))),
+                const SizedBox(height: 10),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFA855F7).withOpacity(0.05),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      )
+                    ],
+                    border: Border.all(color: const Color(0xFFF3E8FF)),
+                  ),
+                  child: Column(
+                    children: _categories.keys.map((cat) {
+                      return CheckboxListTile(
+                        title: Text(cat,
+                            style: const TextStyle(
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4B5563))),
+                        value: _categories[cat],
+                        activeColor: const Color(0xFF22C55E), // Green
+                        checkboxShape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4)),
+                        onChanged: (val) =>
+                            setState(() => _categories[cat] = val ?? false),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: ElevatedButton(
+                    onPressed: _isCreating ? null : _createRoom,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFA855F7),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      elevation: 5,
+                      shadowColor: const Color(0xFFA855F7).withOpacity(0.4),
+                    ),
+                    child: _isCreating
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('إنشاء غرفة',
+                            style: TextStyle(
+                                fontSize: 20,
+                                fontFamily: 'Cairo',
+                                fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
             ),
-            Center(child: Text('$_rounds جولات')),
-            const SizedBox(height: 24),
-            const Text('وقت الجولة (بالثواني)',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [30, 60, 90].map((t) {
-                return ChoiceChip(
-                  label: Text('$t ثانية'),
-                  selected: _timeLimit == t,
-                  onSelected: (selected) {
-                    if (selected) setState(() => _timeLimit = t);
-                  },
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 24),
-            const Text('الفئات',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ..._categories.keys.map((cat) {
-              return CheckboxListTile(
-                title: Text(cat),
-                value: _categories[cat],
-                onChanged: (val) =>
-                    setState(() => _categories[cat] = val ?? false),
-              );
-            }),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: _isCreating ? null : _createRoom,
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.purple,
-                    foregroundColor: Colors.white),
-                child: _isCreating
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('إنشاء غرفة', style: TextStyle(fontSize: 18)),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
