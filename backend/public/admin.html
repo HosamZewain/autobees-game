@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autobees Admin Dashboard</title>
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --dark: #1f2937;
+            --light: #f3f4f6;
+            --white: #ffffff;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--light);
+            margin: 0;
+            padding: 0;
+            color: var(--dark);
+        }
+        .header {
+            background-color: var(--dark);
+            color: var(--white);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { margin: 0; font-size: 1.5rem; }
+        .logo { color: var(--primary); font-weight: bold; }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: var(--white);
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .stat-label {
+            font-size: 1rem;
+            color: #6b7280;
+        }
+        
+        h2 { border-bottom: 2px solid var(--primary); padding-bottom: 0.5rem; margin-top: 0; }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            text-align: left;
+            padding: 0.75rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th { background-color: #f9fafb; }
+        tr:last-child td { border-bottom: none; }
+        
+        .badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .badge-green { background-color: #d1fae5; color: #065f46; }
+        .badge-blue { background-color: #dbeafe; color: #1e40af; }
+        
+        #refresh-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #refresh-btn:hover { opacity: 0.9; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span class="logo">Autobees</span> Admin</h1>
+        <button id="refresh-btn" onclick="fetchStats()">Refresh Data</button>
+    </div>
+
+    <div class="container">
+        <!-- Key Metrics -->
+        <div class="grid">
+            <div class="card stat-card">
+                <div>
+                    <div class="stat-value" id="active-rooms-count">0</div>
+                    <div class="stat-label">Active Rooms</div>
+                </div>
+            </div>
+            <div class="card stat-card">
+                <div>
+                    <div class="stat-value" id="connected-players-count">0</div>
+                    <div class="stat-label">Connected Players</div>
+                </div>
+            </div>
+            <div class="card stat-card">
+                <div>
+                    <div class="stat-value" id="total-users-count">-</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Active Rooms -->
+            <div class="card">
+                <h2>Active Rooms</h2>
+                <div id="rooms-list">
+                    <p>Loading...</p>
+                </div>
+            </div>
+
+            <!-- Leaderboard -->
+            <div class="card">
+                <h2>Top Players</h2>
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Username</th>
+                            <th>Wins</th>
+                            <th>XP</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function fetchStats() {
+            try {
+                const response = await fetch('/api/admin/stats');
+                const data = await response.json();
+                
+                // Update Counts
+                document.getElementById('active-rooms-count').textContent = data.activeRooms;
+                document.getElementById('connected-players-count').textContent = data.connectedPlayers;
+                document.getElementById('total-users-count').textContent = data.totalUsers;
+
+                // Update Rooms List
+                const roomsContainer = document.getElementById('rooms-list');
+                if (data.roomsDetails.length === 0) {
+                    roomsContainer.innerHTML = '<p style="color: #6b7280;">No active rooms.</p>';
+                } else {
+                    let html = '<table><thead><tr><th>Code</th><th>Players</th><th>Status</th></tr></thead><tbody>';
+                    data.roomsDetails.forEach(room => {
+                        html += `
+                            <tr>
+                                <td><code>${room.roomId}</code></td>
+                                <td>${room.players}</td>
+                                <td><span class="badge ${room.status === 'playing' ? 'badge-green' : 'badge-blue'}">${room.status}</span></td>
+                            </tr>
+                        `;
+                    });
+                    html += '</tbody></table>';
+                    roomsContainer.innerHTML = html;
+                }
+
+                // Update Leaderboard
+                const tbody = document.querySelector('#leaderboard-table tbody');
+                tbody.innerHTML = '';
+                data.topUsers.forEach((user, index) => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>#${index + 1}</td>
+                            <td>${user.username}</td>
+                            <td>${user.wins}</td>
+                            <td>${user.total_score}</td>
+                        </tr>
+                    `;
+                });
+
+            } catch (err) {
+                console.error('Error fetching stats:', err);
+                alert('Failed to load stats. Is the backend running?');
+            }
+        }
+
+        // Initial load
+        fetchStats();
+        
+        // Auto-refresh every 5 seconds
+        setInterval(fetchStats, 5000);
+    </script>
+</body>
+</html>
