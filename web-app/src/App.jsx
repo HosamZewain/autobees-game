@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import History from './pages/History';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 import Contact from './pages/Contact';
 import HowToPlay from './pages/HowToPlay';
 import ScrollToTop from './components/ScrollToTop';
@@ -53,6 +54,7 @@ const App = () => {
                         <Route path="/register" element={<Register />} />
                         <Route path="/history" element={<History />} />
                         <Route path="/profile" element={<Profile />} />
+                        <Route path="/profile/:id" element={<PublicProfile />} />
                         <Route path="/contact" element={<Contact />} />
                         <Route path="/how-to-play" element={<HowToPlay />} />
                         <Route path="/terms" element={<Terms />} />

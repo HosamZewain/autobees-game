@@ -135,9 +135,9 @@ function updateUserStats(id, won, scoreToAdd) {
     ).run(winInc, lossInc, scoreToAdd, id);
 }
 
-function updateUserProfile(id, username, passwordHash, dob, gender, profile_pic) {
-    let query = 'UPDATE users SET username = ?, dob = ?, gender = ?, profile_pic = ?';
-    let params = [username, dob, gender, profile_pic];
+function updateUserProfile(id, username, email, passwordHash, dob, gender, profile_pic) {
+    let query = 'UPDATE users SET username = ?, email = ?, dob = ?, gender = ?, profile_pic = ?';
+    let params = [username, email, dob, gender, profile_pic];
 
     if (passwordHash) {
         query += ', password_hash = ?';

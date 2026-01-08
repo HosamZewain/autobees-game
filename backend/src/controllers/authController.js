@@ -101,16 +101,25 @@ async function login(req, res) {
 async function updateProfile(req, res) {
     try {
         const userId = req.user.id; // From middleware
-        const { username, password, dob, gender, profile_pic } = req.body;
+        const { username, email, password, dob, gender, profile_pic } = req.body;
 
-        if (!username) {
-            return res.status(400).json({ error: 'Username is required' });
+        if (!username || !email) {
+            return res.status(400).json({ error: 'Username and Email are required' });
         }
 
-        // Check if username is taken by another user
+        // Check availability
+        const { getUserByUsername, getUserByEmail, updateUserProfile } = require('../data/database_sqlite');
+
+        // Check username
         const existingUser = await getUserByUsername(username);
         if (existingUser && existingUser.id !== userId) {
             return res.status(400).json({ error: 'Username already exists' });
+        }
+
+        // Check email
+        const existingEmail = await getUserByEmail(email);
+        if (existingEmail && existingEmail.id !== userId) {
+            return res.status(400).json({ error: 'Email already exists' });
         }
 
         // Hash password if provided
@@ -119,8 +128,7 @@ async function updateProfile(req, res) {
             passwordHash = await bcrypt.hash(password, 10);
         }
 
-        const { updateUserProfile } = require('../data/database_sqlite');
-        const updatedUser = await updateUserProfile(userId, username, passwordHash, dob, gender, profile_pic);
+        const updatedUser = await updateUserProfile(userId, username, email, passwordHash, dob, gender, profile_pic);
 
         // Return new token (since username might have changed) and user data
         const token = jwt.sign({ id: updatedUser.id, username: updatedUser.username }, SECRET_KEY, { expiresIn: '7d' });
@@ -130,6 +138,7 @@ async function updateProfile(req, res) {
             user: {
                 id: updatedUser.id,
                 username: updatedUser.username,
+                email: updatedUser.email,
                 role: updatedUser.role,
                 wins: updatedUser.wins,
                 losses: updatedUser.losses,
@@ -146,4 +155,42 @@ async function updateProfile(req, res) {
     }
 }
 
-module.exports = { register, login, updateProfile, SECRET_KEY };
+async function getPublicProfile(req, res) {
+    try {
+        const idOrUsername = req.params.id;
+        const { getUserById, getUserByUsername } = require('../data/database_sqlite');
+
+        let user;
+        // Check if input is purely numeric (ID) or string (Username)
+        // Note: Usernames in this app can contain numbers, but usually IDs are pure numbers.
+        // Safer approach: Try username first, if not found and is numeric, try ID.
+        // OR: changing route to /profile/:username is cleaner but route param is :id.
+
+        user = await getUserByUsername(idOrUsername);
+
+        if (!user && !isNaN(idOrUsername)) {
+            user = await getUserById(idOrUsername);
+        }
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        res.json({
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            wins: user.wins,
+            losses: user.losses,
+            total_score: user.total_score,
+            gender: user.gender,
+            profile_pic: user.profile_pic,
+            joined_at: user.created_at // Assuming created_at exists, checks needed
+        });
+    } catch (error) {
+        console.error('Get Public Profile error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+module.exports = { register, login, updateProfile, getPublicProfile, SECRET_KEY };

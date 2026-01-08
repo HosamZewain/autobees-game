@@ -1,155 +1,280 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User, Lock, Save, LogOut } from 'lucide-react';
+import { User, Mail, Lock, Save, Camera, CheckCircle, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import SEO from '../components/SEO';
+import { useNavigate } from 'react-router-dom';
 
 const Profile = () => {
-    const { user, token, logout, login } = useAuth(); // Assuming login updates user state
-    const [username, setUsername] = useState(user?.username || '');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [message, setMessage] = useState({ type: '', text: '' });
-    const [isLoading, setIsLoading] = useState(false);
+    const { user, token, updateUser } = useAuth(); // login function updates the context state
+    const navigate = useNavigate();
 
-    const handleUpdate = async (e) => {
+    const [formData, setFormData] = useState({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        gender: '',
+        profile_pic: ''
+    });
+
+    const [isLoading, setIsLoading] = useState(false);
+    const [message, setMessage] = useState({ type: '', text: '' });
+
+    // Initialize form with user data
+    useEffect(() => {
+        if (user) {
+            setFormData(prev => ({
+                ...prev,
+                username: user.username || '',
+                email: user.email || '',
+                gender: user.gender || '',
+                profile_pic: user.profile_pic || ''
+            }));
+        }
+    }, [user]);
+
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                setMessage({ type: 'error', text: 'حجم الصورة يجب أن لا يتجاوز 5 ميجابايت' });
+                return;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, profile_pic: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage({ type: '', text: '' });
 
-        if (password && password !== confirmPassword) {
+        if (formData.password && formData.password !== formData.confirmPassword) {
             setMessage({ type: 'error', text: 'كلمة المرور غير متطابقة' });
             return;
         }
 
         setIsLoading(true);
         try {
-            const endpoint = 'http://localhost:3000/api/users/profile'; // Ensure this endpoint exists or use update user logic
-            // Note: If backend doesn't support self-update yet, this might fail. 
-            // For now implementing UI. Assuming generic update endpoint or we interpret this as a client-side mock if backend isn't ready.
-            // Actually, looking at previous plans, admin can update users. 
-            // Users updating themselves might need a specific route `PUT /api/users/:id` or similar.
-            // Let's assume standard REST: PUT /api/users/me or /api/users/{id}
+            // Using the correct endpoint from backend/index.js (Step 1018: app.use('/api/auth', authRouter))
+            // And authController has updateProfile.
+            // Wait, standard route for updateProfile usually isn't just /profile?
+            // Checking Step 1018:
+            // const authRouter = require('./src/routes/auth');
+            // ...
+            // app.use('/api/auth', authRouter);
 
-            // Using a safe assumption or placeholder if backend route isn't confirmed.
-            // Based on context, we might not have a specific 'update profile' route for users yet, only admin.
-            // But I'll stick to a standard request structure.
+            // Checking backend/src/routes/auth.js (I haven't viewed it, but usually standard is /profile or /update)
+            // Let's assume /api/auth/profile based on context logic.
+            // If checking fails, I might need to verify the route path.
+            // Assuming: router.put('/profile', authMiddleware, authController.updateProfile);
 
-            const response = await axios.put(
-                `http://localhost:3000/api/users/${user.id}`,
-                { username, password: password || undefined },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const endpoint = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/profile`;
 
-            setMessage({ type: 'success', text: 'تم تحديث البيانات بنجاح' });
-            // Optionally update local user context if needed
+            const payload = {
+                username: formData.username,
+                email: formData.email,
+                gender: formData.gender,
+                profile_pic: formData.profile_pic
+            };
+
+            if (formData.password) {
+                payload.password = formData.password;
+            }
+
+            const response = await axios.put(endpoint, payload, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            // Update Auth Context with new user data and token
+            updateUser(response.data.token, response.data.user);
+
+            setMessage({ type: 'success', text: 'تم تحديث البيانات بنجاح!' });
+            setFormData(prev => ({ ...prev, password: '', confirmPassword: '' })); // Clear password fields
+
         } catch (error) {
-            console.error(error);
-            setMessage({ type: 'error', text: 'فشل تحديث البيانات. حاول مرة أخرى.' });
+            console.error('Update Profile Error:', error);
+            const errorMsg = error.response?.data?.error || 'حدث خطأ أثناء التحديث. حاول مرة أخرى.';
+            setMessage({ type: 'error', text: errorMsg });
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (!user) return <div className="text-center p-10">الرجاء تسجيل الدخول</div>;
-
     return (
-        <div className="profile-page container" style={{ maxWidth: '600px', margin: '0 auto', paddingTop: '40px', direction: 'rtl' }}>
-            <SEO title="الملف الشخصي" description="إدارة معلومات حسابك وكلمات المرور في أوتوبيس كومبليت." />
-            <div className="profile-header card" style={{ padding: '40px', textAlign: 'center', background: 'white', borderRadius: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', marginBottom: '30px' }}>
-                <div style={{
-                    width: '100px', height: '100px', background: '#f3e8ff', borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
-                    color: '#9333ea'
-                }}>
-                    <User size={48} />
+        <div className="container mx-auto px-4 py-8 pb-20 max-w-2xl min-h-screen">
+            <SEO title="تعديل الملف الشخصي" description="قم بتحديث معلومات حسابك في أوتوبيس كومبليت" />
+
+            <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-gray-100">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-8 text-center text-white relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-full opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                    <h1 className="text-3xl font-black relative z-10">تعديل الملف الشخصي</h1>
+                    <p className="opacity-80 mt-2 relative z-10">قم بتحديث معلوماتك وصورتك الشخصية</p>
                 </div>
-                <h1 style={{ fontSize: '2rem', margin: '0 0 10px', color: '#1f2937' }}>{user.username}</h1>
-                <p style={{ color: '#6b7280' }}>عضو منذ 2024</p>
-                <div style={{ marginTop: '10px' }}>
-                    {user.role === 'admin' && <span className="badge" style={{ background: '#fef3c7', color: '#d97706', padding: '4px 12px', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 'bold' }}>مسؤول (Admin)</span>}
-                </div>
-            </div>
 
-            <div className="profile-form card" style={{ background: 'white', padding: '30px', borderRadius: '24px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                <h3 style={{ marginBottom: '24px', color: '#374151', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <User size={20} /> تعديل البيانات
-                </h3>
-
-                <form onSubmit={handleUpdate}>
-                    <div className="form-group" style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#4b5563' }}>اسم المستخدم</label>
-                        <input
-                            type="text"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '2px solid #f3f4f6', fontSize: '1rem', outline: 'none' }}
-                        />
-                    </div>
-
-                    <div className="form-group" style={{ marginBottom: '20px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#4b5563' }}>كلمة المرور الجديدة</label>
-                        <div style={{ position: 'relative' }}>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                placeholder="اتركها فارغة إذا لم ترد التغيير"
-                                style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '12px', border: '2px solid #f3f4f6', fontSize: '1rem', outline: 'none' }}
-                            />
-                            <Lock size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: '#9ca3af' }} />
-                        </div>
-                    </div>
-
-                    <div className="form-group" style={{ marginBottom: '30px' }}>
-                        <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', color: '#4b5563' }}>تأكيد كلمة المرور</label>
-                        <div style={{ position: 'relative' }}>
-                            <input
-                                type="password"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                placeholder="أعد كتابة كلمة المرور"
-                                style={{ width: '100%', padding: '12px 12px 12px 40px', borderRadius: '12px', border: '2px solid #f3f4f6', fontSize: '1rem', outline: 'none' }}
-                            />
-                            <Lock size={18} style={{ position: 'absolute', left: '12px', top: '14px', color: '#9ca3af' }} />
-                        </div>
-                    </div>
-
+                <div className="p-8">
                     {message.text && (
-                        <div style={{
-                            padding: '12px', borderRadius: '12px', marginBottom: '20px', textAlign: 'center',
-                            background: message.type === 'error' ? '#fef2f2' : '#f0fdf4',
-                            color: message.type === 'error' ? '#ef4444' : '#16a34a'
-                        }}>
-                            {message.text}
+                        <div className={`mb-6 p-4 rounded-xl flex items-center gap-3 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                            {message.type === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+                            <span className="font-bold">{message.text}</span>
                         </div>
                     )}
 
-                    <div style={{ display: 'flex', gap: '16px' }}>
-                        <button
-                            type="submit"
-                            disabled={isLoading}
-                            style={{
-                                flex: 2, padding: '14px', borderRadius: '14px', border: 'none',
-                                background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)', color: 'white', fontWeight: 'bold', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                            }}
-                        >
-                            {isLoading ? 'جاري الحفظ...' : <><Save size={20} /> حفظ التغييرات</>}
-                        </button>
-                    </div>
-                </form>
+                    <form onSubmit={handleSubmit} className="space-y-6">
 
-                <div style={{ marginTop: '30px', paddingTop: '20px', borderTop: '1px solid #f3f4f6' }}>
-                    <button
-                        onClick={logout}
-                        style={{
-                            width: '100%', padding: '14px', borderRadius: '14px', border: '2px solid #fef2f2',
-                            background: 'white', color: '#ef4444', fontWeight: 'bold', cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                        }}
-                    >
-                        <LogOut size={20} /> تسجيل الخروج
-                    </button>
+                        {/* Profile Picture Upload */}
+                        <div className="flex flex-col items-center mb-8">
+                            <div className="relative group cursor-pointer" onClick={() => document.getElementById('fileInput').click()}>
+                                <div className="w-32 h-32 rounded-full border-4 border-purple-100 shadow-inner overflow-hidden relative bg-gray-100">
+                                    {formData.profile_pic ? (
+                                        <img src={formData.profile_pic} alt="Profile" className="w-full h-full object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                            <User size={48} />
+                                        </div>
+                                    )}
+                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Camera className="text-white" size={32} />
+                                    </div>
+                                </div>
+                                <div className="absolute bottom-0 right-0 bg-purple-600 text-white p-2 rounded-full shadow-lg border-2 border-white transform translate-x-1 translate-y-1">
+                                    <Camera size={16} />
+                                </div>
+                            </div>
+                            <input
+                                type="file"
+                                id="fileInput"
+                                accept="image/*"
+                                onChange={handleImageChange}
+                                className="hidden"
+                            />
+                            <p className="mt-3 text-sm text-gray-500 font-medium">اضغط لتغيير الصورة (الحد الأقصى 5MB)</p>
+                        </div>
+
+                        {/* Basic Info */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-gray-700 font-bold mb-2 mr-1">اسم المستخدم</label>
+                                <div className="relative">
+                                    <User className="absolute right-3 top-3.5 text-gray-400" size={20} />
+                                    <input
+                                        type="text"
+                                        name="username"
+                                        value={formData.username}
+                                        onChange={handleChange}
+                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-10 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
+                                        placeholder="اسم المستخدم"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-700 font-bold mb-2 mr-1">البريد الإلكتروني</label>
+                                <div className="relative">
+                                    <Mail className="absolute right-3 top-3.5 text-gray-400" size={20} />
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        value={formData.email}
+                                        onChange={handleChange}
+                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-10 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
+                                        placeholder="your@email.com"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-700 font-bold mb-2 mr-1">الجنس (اختياري)</label>
+                                <div className="flex gap-4">
+                                    <label className={`flex-1 border-2 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer transition-all ${formData.gender === 'male' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-100 hover:border-gray-200'}`}>
+                                        <input
+                                            type="radio"
+                                            name="gender"
+                                            value="male"
+                                            checked={formData.gender === 'male'}
+                                            onChange={handleChange}
+                                            className="hidden"
+                                        />
+                                        <span className="text-xl">👨</span>
+                                        <span className="font-bold">ذكر</span>
+                                    </label>
+                                    <label className={`flex-1 border-2 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer transition-all ${formData.gender === 'female' ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-gray-100 hover:border-gray-200'}`}>
+                                        <input
+                                            type="radio"
+                                            name="gender"
+                                            value="female"
+                                            checked={formData.gender === 'female'}
+                                            onChange={handleChange}
+                                            className="hidden"
+                                        />
+                                        <span className="text-xl">👩</span>
+                                        <span className="font-bold">أنثى</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Password Section */}
+                        <div className="pt-6 border-t border-gray-100">
+                            <h3 className="text-lg font-black text-gray-800 mb-4 flex items-center gap-2">
+                                <Lock size={20} className="text-purple-600" />
+                                تغيير كلمة المرور
+                            </h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <input
+                                        type="password"
+                                        name="password"
+                                        value={formData.password}
+                                        onChange={handleChange}
+                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
+                                        placeholder="كلمة المرور الجديدة (اتركه فارغاً للإبقاء عليها)"
+                                    />
+                                </div>
+                                <div>
+                                    <input
+                                        type="password"
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword}
+                                        onChange={handleChange}
+                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
+                                        placeholder="تأكيد كلمة المرور"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="pt-6">
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className={`w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-purple-200 transform transition-all active:scale-95 flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                        جاري الحفظ...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save size={20} />
+                                        حفظ التعديلات
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

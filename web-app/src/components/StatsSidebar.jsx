@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { Trophy, Users, Wifi } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
@@ -35,7 +36,9 @@ const StatsSidebar = () => {
                         topPlayers.slice(0, 5).map((player, index) => (
                             <div key={index} className="mini-player-row">
                                 <span className={`rank rank-${index + 1}`}>#{index + 1}</span>
-                                <span className="player-name">{player.username}</span>
+                                <Link to={`/profile/${player.username}`} className="player-name hover:text-purple-600 transition-colors w-full text-right block truncate">
+                                    {player.username}
+                                </Link>
                                 <span className="player-score">{player.total_score}</span>
                             </div>
                         ))
