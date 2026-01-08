@@ -2,6 +2,8 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 
+import { SOCKET_URL } from '../config';
+
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
@@ -16,7 +18,7 @@ export const SocketProvider = ({ children }) => {
 
     useEffect(() => {
         const socketOptions = token ? { auth: { token } } : {};
-        const newSocket = io('http://localhost:3000', socketOptions);
+        const newSocket = io(SOCKET_URL, socketOptions);
 
         newSocket.on('connect', () => {
             console.log('Connected to socket server');

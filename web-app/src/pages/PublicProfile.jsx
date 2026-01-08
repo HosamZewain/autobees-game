@@ -4,6 +4,8 @@ import axios from 'axios';
 import SEO from '../components/SEO';
 import { User, Trophy, XCircle, Calendar, ArrowLeft } from 'lucide-react';
 
+import { API_BASE } from '../config';
+
 const PublicProfile = () => {
     const { id } = useParams();
     const [profile, setProfile] = useState(null);
@@ -13,9 +15,8 @@ const PublicProfile = () => {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                // Using the specific public endpoint we just created
-                const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-                const response = await axios.get(`${API_URL}/api/users/public/${id}`);
+                // Using the specific public endpoint
+                const response = await axios.get(`${API_BASE}/users/public/${id}`);
                 setProfile(response.data);
             } catch (err) {
                 console.error("Error fetching public profile:", err);

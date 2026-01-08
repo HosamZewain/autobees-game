@@ -5,6 +5,8 @@ import axios from 'axios';
 import SEO from '../components/SEO';
 import { useNavigate } from 'react-router-dom';
 
+import { API_BASE } from '../config';
+
 const Profile = () => {
     const { user, token, updateUser } = useAuth(); // login function updates the context state
     const navigate = useNavigate();
@@ -64,20 +66,8 @@ const Profile = () => {
 
         setIsLoading(true);
         try {
-            // Using the correct endpoint from backend/index.js (Step 1018: app.use('/api/auth', authRouter))
-            // And authController has updateProfile.
-            // Wait, standard route for updateProfile usually isn't just /profile?
-            // Checking Step 1018:
-            // const authRouter = require('./src/routes/auth');
-            // ...
-            // app.use('/api/auth', authRouter);
-
-            // Checking backend/src/routes/auth.js (I haven't viewed it, but usually standard is /profile or /update)
-            // Let's assume /api/auth/profile based on context logic.
-            // If checking fails, I might need to verify the route path.
-            // Assuming: router.put('/profile', authMiddleware, authController.updateProfile);
-
-            const endpoint = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/profile`;
+            // Using the correct endpoint
+            const endpoint = `${API_BASE}/auth/profile`;
 
             const payload = {
                 username: formData.username,

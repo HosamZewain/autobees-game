@@ -6,6 +6,8 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import SEO from '../components/SEO';
 
+import { API_BASE } from '../config';
+
 const Home = () => {
   const { token } = useAuth();
   const [topPlayers, setTopPlayers] = useState([]);
@@ -13,7 +15,7 @@ const Home = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/api/leaderboard');
+        const response = await axios.get(`${API_BASE}/leaderboard`);
         setTopPlayers(response.data);
       } catch (error) {
         console.error('Failed to fetch leaderboard:', error);

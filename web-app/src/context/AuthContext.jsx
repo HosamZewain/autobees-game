@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { API_BASE } from '../config';
 
 const AuthContext = createContext(null);
 
@@ -9,7 +10,7 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     // Backend base URL
-    const API_URL = 'http://localhost:3000/api';
+    const API_URL = API_BASE;
 
     useEffect(() => {
         if (token) {

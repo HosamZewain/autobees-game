@@ -4,6 +4,8 @@ import axios from 'axios';
 import { Trophy, Users, Wifi } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 
+import { API_BASE } from '../config';
+
 const StatsSidebar = () => {
     const [topPlayers, setTopPlayers] = useState([]);
     const { onlinePlayers, onlineVisitors } = useSocket();
@@ -11,7 +13,7 @@ const StatsSidebar = () => {
     useEffect(() => {
         const fetchLeaderboard = async () => {
             try {
-                const response = await axios.get('http://localhost:3000/api/leaderboard');
+                const response = await axios.get(`${API_BASE}/leaderboard`);
                 setTopPlayers(response.data);
             } catch (error) {
                 console.error('Failed to fetch leaderboard:', error);
