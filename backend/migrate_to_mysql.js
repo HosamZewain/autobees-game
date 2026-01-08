@@ -4,7 +4,7 @@ const path = require('path');
 require('dotenv').config();
 
 // SQLite Connection
-const sqlitePath = path.join(__dirname, 'autobees.sqlite');
+const sqlitePath = path.join(__dirname, 'src', 'autobees.sqlite');
 const sqlite = new sqlite3(sqlitePath);
 
 // MySQL Connection
