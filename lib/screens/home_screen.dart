@@ -1,7 +1,7 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../services/socket_service.dart';
 import 'profile_screen.dart';
 import 'setup_screen.dart';
 import 'multiplayer/multiplayer_home_screen.dart';
@@ -75,8 +75,9 @@ class _HomeScreenState extends State<HomeScreen>
                         MaterialPageRoute(
                             builder: (_) => const ProfileScreen()),
                       ),
-                      icon: const Icon(Icons.settings_rounded,
-                          color: Color(0xFF6B7280), size: 28),
+                      // Changed to Person/Avatar icon as requested
+                      icon: const Icon(Icons.person_rounded,
+                          color: Color(0xFFA855F7), size: 30), // Purple Icon
                       style: IconButton.styleFrom(
                         backgroundColor: Colors.white,
                         padding: const EdgeInsets.all(12),
@@ -140,6 +141,7 @@ class _HomeScreenState extends State<HomeScreen>
                           fontFamily: 'Cairo',
                         ),
                       ),
+
                       const Text(
                         'Autobees Complete',
                         style: TextStyle(
@@ -148,6 +150,57 @@ class _HomeScreenState extends State<HomeScreen>
                             color: Color(0xFF4B0082), // Deep Purple
                             fontFamily: 'Cairo',
                             height: 1.2),
+                      ),
+
+                      const SizedBox(height: 10),
+
+                      // Online Users Indicator
+                      StreamBuilder<List<dynamic>>(
+                        stream: context.read<SocketService>().onlineUsersStream,
+                        initialData:
+                            context.read<SocketService>().currentOnlineUsers,
+                        builder: (context, snapshot) {
+                          final count = snapshot.data?.length ?? 0;
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.green.withOpacity(0.2),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                              border: Border.all(
+                                  color: Colors.green.withOpacity(0.1)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: const BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '$count لاعبين متصلين',
+                                  style: const TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green, // Vibrant Green
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 50),

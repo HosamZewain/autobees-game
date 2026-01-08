@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { UserPlus, Mail, Lock, User } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -29,6 +30,7 @@ const Register = () => {
 
   return (
     <div className="auth-page container">
+      <SEO title="إنشاء حساب جديد" description="انضم إلى أوتوبيس كومبليت، أنشئ حسابك الآن وابدأ في جمع النقاط ومنافسة اللاعبين." />
       <div className="auth-card">
         <div className="auth-header">
           <div className="icon-box"><UserPlus size={32} /></div>
@@ -99,7 +101,7 @@ const Register = () => {
           align-items: center;
           min-height: 85vh;
           direction: rtl;
-          padding: 20px;
+          padding: 40px 20px 100px;
         }
         .auth-card {
           width: 100%;

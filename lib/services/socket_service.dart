@@ -38,6 +38,10 @@ class SocketService extends ChangeNotifier {
   final _inviteRejectedController =
       StreamController<Map<String, dynamic>>.broadcast();
 
+  // Cache for current state
+  List<dynamic> _onlineUsers = [];
+  List<dynamic> get currentOnlineUsers => _onlineUsers;
+
   Stream<MultiplayerRoom> get roomStream => _roomController.stream;
   Stream<Map<String, dynamic>> get gameStartedStream =>
       _gameStartedController.stream;
@@ -142,7 +146,8 @@ class SocketService extends ChangeNotifier {
     // Invite System Listeners
     _socket!.on('online_users', (data) {
       // data should be List<dynamic>
-      _onlineUsersController.add(data as List<dynamic>);
+      _onlineUsers = data as List<dynamic>;
+      _onlineUsersController.add(_onlineUsers);
     });
 
     _socket!.on('invite_received', (data) {

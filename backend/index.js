@@ -4,7 +4,7 @@ const { Server } = require("socket.io");
 const cors = require('cors');
 const path = require('path');
 const { register, login } = require('./src/controllers/authController');
-const { updateUserStats, db, logMatch, checkWord, suggestWord, getTopPlayers } = require('./src/data/database');
+const { updateUserStats, db, logMatch, checkWord, suggestWord, getTopPlayers } = require('./src/data/database_sqlite');
 const { socketAuthMiddleware, expressAuthMiddleware } = require('./src/middleware/authMiddleware');
 const adminMiddleware = require('./src/middleware/adminMiddleware');
 const adminController = require('./src/controllers/adminController');
@@ -61,19 +61,50 @@ adminRouter.get('/suggestions', adminController.getSuggestions);
 adminRouter.post('/suggestions/:id/approve', adminController.approveSuggestion);
 adminRouter.delete('/suggestions/:id', adminController.deleteSuggestion);
 
+// Contact Messages
+adminRouter.get('/messages', async (req, res) => {
+    try {
+        const { getContactMessages } = require('./src/data/database_sqlite');
+        const messages = await getContactMessages();
+        res.json(messages);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+adminRouter.put('/messages/:id/status', async (req, res) => {
+    try {
+        const { updateContactMessageStatus } = require('./src/data/database_sqlite');
+        const { status } = req.body;
+        await updateContactMessageStatus(req.params.id, status);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+adminRouter.delete('/messages/:id', async (req, res) => {
+    try {
+        const { deleteContactMessage } = require('./src/data/database_sqlite');
+        await deleteContactMessage(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Admin Stats (Logic lives here to access 'rooms')
 // Admin Stats (Logic lives here to access 'rooms')
 adminRouter.get('/stats', async (req, res) => {
     try {
-        // Use db.query which wraps pool.execute and returns [rows]
-        const topUsers = await db.query("SELECT username, wins, total_score FROM users ORDER BY wins DESC, total_score DESC LIMIT 10");
-        const userCount = await db.query("SELECT COUNT(*) as count FROM users");
-        const matchCount = await db.query("SELECT COUNT(*) as count FROM matches");
-        const wordCount = await db.query("SELECT COUNT(*) as count FROM dictionary");
+        const topUsers = db.prepare("SELECT username, wins, total_score FROM users ORDER BY wins DESC, total_score DESC LIMIT 10").all();
+        const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get();
+        const matchCount = db.prepare("SELECT COUNT(*) as count FROM matches").get();
+        const wordCount = db.prepare("SELECT COUNT(*) as count FROM dictionary").get();
 
-        const totalUsers = userCount[0]?.count || 0;
-        const totalGames = matchCount[0]?.count || 0;
-        const totalWords = wordCount[0]?.count || 0;
+        const totalUsers = userCount?.count || 0;
+        const totalGames = matchCount?.count || 0;
+        const totalWords = wordCount?.count || 0;
 
         const roomsDetails = [];
         let connectedPlayers = 0;
@@ -110,6 +141,10 @@ app.post('/api/matches/log', expressAuthMiddleware, async (req, res) => {
         const { details } = req.body;
         console.log(`[Match History] Logging solo game for user ${req.user.id}`);
         // roomId for single player can be 'solo'
+        // Inject userId into details for history tracking
+        if (details.players && details.players.length > 0) {
+            details.players[0].userId = req.user.id;
+        }
         await logMatch('solo', details);
 
         // Update User Stats for Solo Game
@@ -141,13 +176,32 @@ app.get('/api/leaderboard', async (req, res) => {
 
 // User Match History
 app.get('/api/history', expressAuthMiddleware, async (req, res) => {
+    console.log(`[History API] Request received for user ${req.user.id}`);
     try {
-        const { getUserMatches } = require('./src/data/database');
+        const { getUserMatches } = require('./src/data/database_sqlite');
+        console.log(`[History API] Fetching matches from DB...`);
         const history = await getUserMatches(req.user.id);
+        console.log(`[History API] Found ${history.length} matches. Sending response.`);
         res.json(history);
     } catch (err) {
         console.error('History API Error:', err);
         res.status(500).json({ error: 'Failed to fetch history' });
+    }
+});
+
+// Contact Us (Public)
+app.post('/api/contact', async (req, res) => {
+    try {
+        const { name, contact_info, message } = req.body;
+        if (!name || !contact_info || !message) {
+            return res.status(400).json({ error: 'All fields are required' });
+        }
+        const { createContactMessage } = require('./src/data/database_sqlite');
+        await createContactMessage(name, contact_info, message);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Contact API Error:', err);
+        res.status(500).json({ error: 'Failed to send message' });
     }
 });
 
@@ -179,7 +233,7 @@ app.get(/^\/admin.*$/, (req, res) => {
 });
 
 // SPA Fallback for Game Client (Must be last)
-app.get('*', (req, res) => {
+app.get(/.*/, (req, res) => {
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: 'Not found' });
     }
@@ -193,7 +247,7 @@ console.log("Autobees Backend starting...");
 
 // Data Stores
 const rooms = new Map();
-const onlineUsers = new Map(); // socket.id -> { id, username }
+const onlineUsers = new Map(); // socket.id -> { id, username, isGuest }
 
 // CONSTANTS
 const ARABIC_LETTERS = [
@@ -202,21 +256,26 @@ const ARABIC_LETTERS = [
 
 io.on("connection", (socket) => {
     const user = socket.user;
-    console.log(`User connected: ${socket.id} (Ref: ${user.username})`);
+    console.log(`User connected: ${socket.id} (Guest: ${user.isGuest}, User: ${user.username || 'Anonymous'})`);
 
-    // Track Online User
+    // Track Online User/Visitor
     onlineUsers.set(socket.id, {
         socketId: socket.id,
-        userId: user.id,
-        username: user.username
+        userId: user.id || null,
+        username: user.username || null,
+        isGuest: user.isGuest
     });
 
     // Broadcast updated list to all clients
-    io.emit("online_users", Array.from(onlineUsers.values()));
+    broadcastOnlineCounts();
     broadcastRoomsList();
 
     // Create Room
     socket.on("create_room", (config, callback) => {
+        if (socket.user.isGuest) {
+            if (callback) callback({ error: "يجب تسجيل الدخول لإنشاء غرفة" });
+            return;
+        }
         const roomId = generateRoomId();
         // Ensure config is an object if a string was passed (backward compatibility/web fix)
         let roomConfig = typeof config === 'string' ? { name: config } : config;
@@ -250,6 +309,10 @@ io.on("connection", (socket) => {
 
     // Join Room
     socket.on("join_room", (data, callback) => {
+        if (socket.user.isGuest) {
+            if (callback) callback({ error: "يجب تسجيل الدخول للانضمام لغرفة" });
+            return;
+        }
         // Handle both string and object input
         const roomId = (typeof data === 'object' && data.roomId) ? data.roomId : data;
         joinRoomLogic(socket, roomId, callback);
@@ -277,21 +340,36 @@ io.on("connection", (socket) => {
         startRound(roomId);
     });
 
-    // Submit Answers
+    // Submit Answers - First submission closes round for everyone!
     socket.on("submit_answers", ({ roomId, answers }) => {
         const room = rooms.get(roomId);
-        if (!room || room.status !== "playing") return;
+        if (!room || room.status !== "playing") {
+            console.log(`[Submit] Invalid room or status. RoomId: ${roomId}, RoomExists: ${!!room}, Status: ${room?.status}`);
+            return;
+        }
 
+        console.log(`[Submit] FIRST player ${socket.id} submitted! Closing round for everyone.`);
+
+        // Initialize answers for this round if not exists
         if (!room.answers[room.currentRound]) {
             room.answers[room.currentRound] = {};
         }
 
+        // Store submitter's answers
         room.answers[room.currentRound][socket.id] = answers;
 
-        const submittedCount = Object.keys(room.answers[room.currentRound]).length;
-        if (submittedCount === room.players.length) {
-            finishRound(roomId);
-        }
+        // Collect empty answers from all other players who didn't submit yet
+        room.players.forEach(p => {
+            if (!room.answers[room.currentRound][p.id]) {
+                room.answers[room.currentRound][p.id] = {}; // Empty answers
+                console.log(`[Submit] Player ${p.id} didn't submit - recording empty answers`);
+            }
+        });
+
+        console.log(`[Submit] Finishing round immediately with ${Object.keys(room.answers[room.currentRound]).length} players`);
+
+        // Finish round immediately (don't wait for others)
+        finishRound(roomId);
     });
 
     // Next Round
@@ -366,16 +444,48 @@ io.on("connection", (socket) => {
         }
     });
 
+    socket.on("close_room", ({ roomId }) => {
+        const room = rooms.get(roomId);
+
+        if (!room) {
+            return socket.emit('error', { message: 'Room not found' });
+        }
+
+        // Only owner can close
+        if (room.ownerUserId !== socket.user.id) {
+            return socket.emit('error', { message: 'Only owner can close room' });
+        }
+
+        console.log(`[Close Room] Owner ${socket.user.username} closed room ${roomId}`);
+
+        // Notify all players
+        io.to(roomId).emit('room_closed', { roomId });
+
+        // Delete room
+        rooms.delete(roomId);
+        broadcastRoomsList();
+    });
+
     socket.on("disconnect", () => {
         console.log(`User disconnected: ${socket.id}`);
         handleDisconnect(socket);
 
         // Remove from online users
         onlineUsers.delete(socket.id);
-        io.emit("online_users", Array.from(onlineUsers.values()));
+        broadcastOnlineCounts();
         broadcastRoomsList();
     });
 });
+
+function broadcastOnlineCounts() {
+    const users = Array.from(onlineUsers.values());
+    const playersCount = users.filter(u => !u.isGuest).length;
+    const visitorsCount = users.filter(u => u.isGuest).length;
+
+    io.emit("online_players", playersCount);
+    io.emit("online_visitors", visitorsCount);
+    io.emit("online_users", users);
+}
 
 function broadcastRoomsList() {
     const roomsList = Array.from(rooms.values()).map(r => ({
@@ -407,6 +517,7 @@ function emitRoomUpdate(roomId) {
     io.to(roomId).emit("room_updated", {
         id: room.roomId, // Frontend expects .id
         roomId: room.roomId,
+        name: room.config.name,
         players: room.players, // Array of player objects
         config: room.config,
         status: room.status,
@@ -424,15 +535,14 @@ function joinRoomLogic(socket, roomId, callback) {
         return;
     }
 
-    if (room.status !== "lobby") {
-        if (callback) callback({ error: "Game already started" });
-        return;
-    }
+    // Allow rejoin even if game is in progress (for reconnection)
+    const existingPlayer = room.players.find(p => p.userId === socket.user.id);
 
-    const existingIndex = room.players.findIndex(p => p.userId === socket.user.id);
-    if (existingIndex !== -1) {
-        // Update socket ID for existing user (re-connection)
-        room.players[existingIndex].id = socket.id;
+    if (existingPlayer) {
+        // Player is rejoining - update their connection status
+        existingPlayer.id = socket.id;
+        existingPlayer.connected = true;
+        delete existingPlayer.disconnectedAt;
 
         // If this user was the owner, update the ownerId to the new socket ID
         if (room.ownerUserId === socket.user.id) {
@@ -441,22 +551,37 @@ function joinRoomLogic(socket, roomId, callback) {
         }
 
         socket.join(roomId);
+        console.log(`[Join Room] Player ${socket.user.username} rejoined room ${roomId}`);
     } else {
+        // New player joining
+        if (room.status !== "lobby") {
+            if (callback) callback({ error: "Game already started" });
+            return;
+        }
+
         const player = {
             id: socket.id,
             userId: socket.user.id,
             name: socket.user.username,
+            username: socket.user.username,
             profile_pic: socket.user.profile_pic,
-            score: 0
+            wins: socket.user.wins || 0,
+            losses: socket.user.losses || 0,
+            score: 0,
+            connected: true
         };
         room.players.push(player);
         room.scores[socket.id] = 0;
         socket.join(roomId);
+        console.log(`[Join Room] New player ${socket.user.username} joined room ${roomId}`);
     }
+
+    // Update room activity timestamp
+    room.lastActivity = Date.now();
 
     emitRoomUpdate(roomId);
 
-    if (callback) callback({ roomId, config: room.config, players: room.players, ownerId: room.ownerId, ownerUserId: room.ownerUserId });
+    if (callback) callback({ roomId, config: room.config, players: room.players, ownerId: room.ownerId, ownerUserId: room.ownerUserId, status: room.status });
 }
 
 function startRound(roomId) {
@@ -467,30 +592,35 @@ function startRound(roomId) {
     room.currentLetter = letter;
     room.status = "playing";
 
-    emitRoomUpdate(roomId); // Notify status change
+    emitRoomUpdate(roomId);
+
+    console.log(`[StartRound] Round ${room.currentRound} for room ${roomId}, letter: ${letter}`);
 
     io.to(roomId).emit("game_started", {
         currentRound: room.currentRound,
         letter,
         categories: room.config.categories,
-        timeLimit: room.config.timeLimit
+        timeLimit: null // No time limit - first to submit wins!
     });
 
-    if (room.roundTimer) clearTimeout(room.roundTimer);
-
-    room.roundTimer = setTimeout(() => {
-        finishRound(roomId);
-    }, (room.config.timeLimit + 2) * 1000);
+    // ❌ Removed auto-finish timer
 }
 
 async function finishRound(roomId) {
     const room = rooms.get(roomId);
-    if (!room || room.status !== "playing") return;
+    if (!room || room.status !== "playing") {
+        console.log(`[FinishRound] Cannot finish - room not playing. RoomId: ${roomId}, RoomExists: ${!!room}, Status: ${room?.status}`);
+        return;
+    }
+
+    console.log(`[FinishRound] Starting for room ${roomId}, round ${room.currentRound}`);
 
     if (room.roundTimer) clearTimeout(room.roundTimer);
     room.status = "results";
 
     const currentRoundAnswers = room.answers[room.currentRound] || {};
+    console.log(`[FinishRound] Calculating scores for ${Object.keys(currentRoundAnswers).length} submissions`);
+
     const roundScoresv = await calculateScores(room, currentRoundAnswers);
 
     room.players.forEach(p => {
@@ -499,15 +629,27 @@ async function finishRound(roomId) {
 
     const isFinalRound = room.currentRound >= room.config.rounds;
 
+    console.log(`[FinishRound] Emitting round_results to room ${roomId}. Round: ${room.currentRound}, IsFinal: ${isFinalRound}`);
+
     io.to(roomId).emit("round_results", {
         round: room.currentRound,
+        letter: room.currentLetter,
         results: roundScoresv,
         players: room.players,
-        isFinal: isFinalRound
+        isFinal: isFinalRound,
+        nextRoundIn: isFinalRound ? null : 30
     });
 
     if (isFinalRound) {
+        console.log(`[FinishRound] Final round completed, finishing game`);
         finishGame(roomId);
+    } else {
+        console.log(`[FinishRound] Scheduling next round in 30 seconds`);
+        room.nextRoundTimer = setTimeout(() => {
+            console.log(`[FinishRound] Auto-starting next round for room ${roomId}`);
+            room.currentRound++;
+            startRound(roomId);
+        }, 30 * 1000);
     }
 }
 
@@ -547,59 +689,78 @@ async function finishGame(roomId) {
 }
 
 async function calculateScores(room, allAnswers) {
-    const results = {};
-    room.players.forEach(p => {
-        results[p.id] = { total: 0, categories: {} };
-    });
+    try {
+        console.log(`[CalculateScores] Starting for room ${room.roomId}, round ${room.currentRound}`);
+        const results = {};
+        room.players.forEach(p => {
+            results[p.id] = { total: 0, categories: {} };
+        });
 
-    const categories = room.config.categories;
-    const normalizedTargetLetter = normalizeArabic(room.currentLetter);
+        const categories = room.config.categories;
+        const normalizedTargetLetter = normalizeArabic(room.currentLetter);
 
-    for (const cat of categories) {
-        const valuesMap = {}; // Maps normalizedVal -> [originalVal, [playerIds]]
+        for (const cat of categories) {
+            const valuesMap = {}; // Maps normalizedVal -> [originalVal, [playerIds]]
 
-        // First pass: Group by normalized value
-        const playerAnswers = {};
+            // First pass: Group by normalized value
+            const playerAnswers = {};
 
-        for (const p of room.players) {
-            const pAnswers = allAnswers[p.id] || {};
-            const rawVal = (pAnswers[cat] || "").trim();
-            const normalizedVal = normalizeArabic(rawVal);
+            for (const p of room.players) {
+                const pAnswers = allAnswers[p.id] || {};
+                const rawVal = (pAnswers[cat] || "").trim();
+                const normalizedVal = normalizeArabic(rawVal);
 
-            playerAnswers[p.id] = { raw: rawVal, normalized: normalizedVal };
+                playerAnswers[p.id] = { raw: rawVal, normalized: normalizedVal };
 
-            // 1. Basic Validation: Empty or Wrong Letter
-            if (!rawVal || rawVal.length === 0 || !normalizedVal.startsWith(normalizedTargetLetter)) {
-                results[p.id].categories[cat] = { value: rawVal, score: 0, type: "red" };
-            } else {
-                // 2. Dictionary Validation
-                const exists = await db.checkWord(rawVal, cat, room.currentLetter);
-                if (!exists) {
+                // 1. Basic Validation: Empty or Wrong Letter
+                if (!rawVal || rawVal.length === 0 || !normalizedVal.startsWith(normalizedTargetLetter)) {
                     results[p.id].categories[cat] = { value: rawVal, score: 0, type: "red" };
                 } else {
-                    if (!valuesMap[normalizedVal]) valuesMap[normalizedVal] = [];
-                    valuesMap[normalizedVal].push(p.id);
+                    // 2. Dictionary Validation
+                    try {
+                        const exists = checkWord(rawVal, cat, room.currentLetter);
+                        if (!exists) {
+                            results[p.id].categories[cat] = { value: rawVal, score: 0, type: "red" };
+                        } else {
+                            if (!valuesMap[normalizedVal]) valuesMap[normalizedVal] = [];
+                            valuesMap[normalizedVal].push(p.id);
+                        }
+                    } catch (dbError) {
+                        console.error(`[CalculateScores] DB Error checking word "${rawVal}":`, dbError.message);
+                        // Default to accepting the word if DB fails
+                        if (!valuesMap[normalizedVal]) valuesMap[normalizedVal] = [];
+                        valuesMap[normalizedVal].push(p.id);
+                    }
                 }
             }
+
+            // Second pass: Scoring based on uniqueness of NORMALIZED value
+            Object.keys(valuesMap).forEach(normKey => {
+                const playerIds = valuesMap[normKey];
+                const isUnique = playerIds.length === 1;
+                const points = isUnique ? 10 : 5;
+                const type = isUnique ? "green" : "yellow";
+
+                playerIds.forEach(pid => {
+                    results[pid].categories[cat] = { value: playerAnswers[pid].raw, score: points, type: type };
+                    results[pid].total += points;
+                    if (!room.scores[pid]) room.scores[pid] = 0;
+                    room.scores[pid] += points;
+                });
+            });
         }
 
-        // Second pass: Scoring based on uniqueness of NORMALIZED value
-        Object.keys(valuesMap).forEach(normKey => {
-            const playerIds = valuesMap[normKey];
-            const isUnique = playerIds.length === 1;
-            const points = isUnique ? 10 : 5;
-            const type = isUnique ? "green" : "yellow";
-
-            playerIds.forEach(pid => {
-                results[pid].categories[cat] = { value: playerAnswers[pid].raw, score: points, type: type };
-                results[pid].total += points;
-
-                if (!room.scores[pid]) room.scores[pid] = 0;
-                room.scores[pid] += points;
-            });
+        console.log(`[CalculateScores] Completed successfully for room ${room.roomId}`);
+        return results;
+    } catch (error) {
+        console.error(`[CalculateScores] CRITICAL ERROR:`, error);
+        // Return empty results to prevent crash
+        const results = {};
+        room.players.forEach(p => {
+            results[p.id] = { total: 0, categories: {} };
         });
+        return results;
     }
-    return results;
 }
 
 function normalizeArabic(text) {
@@ -612,17 +773,69 @@ function normalizeArabic(text) {
 
 function handleDisconnect(socket) {
     for (const [roomId, room] of rooms.entries()) {
-        const index = room.players.findIndex(p => p.id === socket.id);
-        if (index !== -1) {
-            room.players.splice(index, 1);
+        const player = room.players.find(p => p.id === socket.id);
+        if (player) {
+            // Mark player as disconnected instead of removing
+            player.connected = false;
+            player.disconnectedAt = Date.now();
+
+            console.log(`Player ${player.name} disconnected from room ${roomId}`);
+
+            // Update room activity
+            room.lastActivity = Date.now();
+
+            // Emit update to show disconnected status
             emitRoomUpdate(roomId);
 
-            if (room.players.length === 0) {
-                rooms.delete(roomId);
-            }
+            // Don't delete room - it persists for rejoin
+            // Room will be cleaned up by periodic cleanup task if truly abandoned
         }
     }
 }
+
+// Periodic cleanup of abandoned rooms
+setInterval(() => {
+    const now = Date.now();
+    const ROOM_TIMEOUT = 60 * 60 * 1000; // 1 hour
+
+    for (const [roomId, room] of rooms.entries()) {
+        const allDisconnected = room.players.every(p => !p.connected);
+        const inactive = (now - room.lastActivity) > ROOM_TIMEOUT;
+
+        if (allDisconnected && inactive) {
+            console.log(`[Cleanup] Removing abandoned room: ${roomId}`);
+            rooms.delete(roomId);
+            broadcastRoomsList();
+        }
+    }
+}, 5 * 60 * 1000); // Check every 5 minutes
+
+// Close Room event (owner only)
+io.on("connection", (socket) => {
+    // ... existing connection handlers ...
+
+    socket.on("close_room", ({ roomId }) => {
+        const room = rooms.get(roomId);
+
+        if (!room) {
+            return socket.emit('error', { message: 'Room not found' });
+        }
+
+        // Only owner can close
+        if (room.ownerUserId !== socket.user.id) {
+            return socket.emit('error', { message: 'Only owner can close room' });
+        }
+
+        console.log(`[Close Room] Owner ${socket.user.username} closed room ${roomId}`);
+
+        // Notify all players
+        io.to(roomId).emit('room_closed', { roomId });
+
+        // Delete room
+        rooms.delete(roomId);
+        broadcastRoomsList();
+    });
+});
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {

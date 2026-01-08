@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; // Add intl to pubspec if needed, or just standard formatting
+// Add intl to pubspec if needed, or just standard formatting
 import '../services/auth_service.dart';
 import 'auth/login_screen.dart';
 
@@ -273,7 +273,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     border: Border.all(color: const Color(0xFFF3E8FF)),
                   ),
                   child: DropdownButtonFormField<String>(
-                    value: _selectedGender,
+                    initialValue: _selectedGender,
                     decoration: const InputDecoration(
                       labelText: 'النوع',
                       labelStyle:

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const History = () => {
     const { token, API_URL } = useAuth();
@@ -32,6 +33,7 @@ const History = () => {
 
     return (
         <div className="history-page container">
+            <SEO title="سجل الألعاب" description="استعرض تاريخ ألعابك، نتائجك، وإحصائيات فوزك في أوتوبيس كومبليت." />
             <div className="history-header">
                 <button onClick={() => navigate('/play')} className="back-btn">
                     <ArrowLeft size={24} />

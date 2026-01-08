@@ -65,6 +65,16 @@ const db = {
         if (!pool) throw new Error('Database not initialized');
         const [rows] = await pool.execute(sql, params);
         return rows;
+    },
+    async checkWord(word, category, letter) {
+        if (!pool) throw new Error('Database not initialized');
+        const normWord = normalizeArabic(word);
+        // Check dictionary for approved words
+        const [rows] = await pool.execute(
+            'SELECT id FROM dictionary WHERE word = ? AND category = ?',
+            [normWord, category]
+        );
+        return rows.length > 0;
     }
 };
 
@@ -184,6 +194,16 @@ async function initDatabase() {
             is_winner TINYINT DEFAULT 0,
             FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`);
+
+        // 8. Contact Messages Table
+        await pool.query(`CREATE TABLE IF NOT EXISTS contact_messages (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            name VARCHAR(255) NOT NULL,
+            contact_info VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            status VARCHAR(50) DEFAULT 'new',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
         console.log('Database tables ready.');
@@ -460,6 +480,26 @@ async function checkWord(word, category, letter) {
     return isValid;
 }
 
+async function createContactMessage(name, contact_info, message) {
+    await pool.execute(
+        'INSERT INTO contact_messages (name, contact_info, message) VALUES (?, ?, ?)',
+        [name, contact_info, message]
+    );
+}
+
+async function getContactMessages() {
+    const [rows] = await pool.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
+    return rows;
+}
+
+async function updateContactMessageStatus(id, status) {
+    await pool.execute('UPDATE contact_messages SET status = ? WHERE id = ?', [status, id]);
+}
+
+async function deleteContactMessage(id) {
+    await pool.execute('DELETE FROM contact_messages WHERE id = ?', [id]);
+}
+
 // Maintain compatibility with existing code that might use db.something
 module.exports = {
     db,
@@ -487,5 +527,9 @@ module.exports = {
     suggestWord,
     getPendingWords,
     approveWord,
-    deletePendingWord
+    deletePendingWord,
+    createContactMessage,
+    getContactMessages,
+    updateContactMessageStatus,
+    deleteContactMessage
 };

@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, Trophy, Users, Zap, Play, User, Crown } from 'lucide-react';
+import { Sparkles, Trophy, Users, Zap, Play, User, Crown, Info, BookOpen, Download } from 'lucide-react';
+import { Apple, Smartphone } from 'lucide-react'; // For app store icons
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 
 const Home = () => {
   const { token } = useAuth();
@@ -21,187 +23,242 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="mobile-home-landing container">
-      {/* Hero Section */}
-      <div className="greeting-box">
-        <div className="bus-logo">
-          <span style={{ fontSize: '80px', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }}>🚌</span>
-        </div>
-        <h3 className="subtitle">التحدي الأمثل لعبة الكلمات</h3>
-        <h1>أوتوبيس كومبليت</h1>
-      </div>
-
-      <div className="menue-buttons">
-        <Link to="/play" className="menu-btn btn-green">
-          <div className="btn-icon"><Play size={24} fill="currentColor" /></div>
-          <div className="btn-text">
-            <span>العب الآن</span>
-            <small>ابدأ التحدي فوراً</small>
+    <div className="home-container">
+      <SEO
+        title="الرئيسية"
+        description="العب أوتوبيس كومبليت (ولد بنت نبات حيوان جماد) أونلاين مجاناً. تحدى أصدقاءك في اللعب الجماعي أو استمتع باللعب الفردي لتطوير مهاراتك اللغوية وسرعة بديهتك."
+        keywords="أوتوبيس كومبليت, لعبة ولد بنت نبات حيوان أونلاين, ألعاب كلمات عربية, مسابقات حروف, لعبة الأتوبيس مجانا, تحدي الأصدقاء كلمات, لعبة ذكاء عربية"
+      />
+      <div className="home-content-wrapper">
+        {/* Welcome Banner */}
+        <div className="welcome-banner">
+          <div className="banner-text">
+            <h1>أهلاً بك، {token ? 'يا بطل' : 'زائر'}! 👋</h1>
+            <p>جاهز للتحدي اليوم؟</p>
           </div>
-        </Link>
+          <div className="banner-icon">🚀</div>
+        </div>
 
-
-        {!token && (
-          <Link to="/register" className="menu-btn btn-purple">
-            <div className="btn-icon"><User size={24} fill="currentColor" /></div>
-            <div className="btn-text">
-              <span>دخول / تسجيل</span>
-              <small>احفظ تقدمك ونافس</small>
+        {/* Main Actions Grid */}
+        <div className="actions-grid">
+          <Link to="/play/solo" className="action-card card-green">
+            <div className="card-icon"><Play size={32} /></div>
+            <div className="card-info">
+              <h3>لعب فردي</h3>
+              <p>تحدى نفسك والوقت</p>
             </div>
+            <div className="card-arrow"><Sparkles size={16} /></div>
           </Link>
-        )}
-      </div>
 
-      {/* Mini Features Grid */}
-      <div className="features-mini-grid">
-        <div className="mini-card">
-          <div className="mini-icon icon-purple"><Users size={20} /></div>
-          <span>لعب جماعي</span>
-        </div>
-        <div className="mini-card">
-          <div className="mini-icon icon-orange"><Zap size={20} /></div>
-          <span>تحدي السرعة</span>
-        </div>
-        <div className="mini-card">
-          <div className="mini-icon icon-green"><Trophy size={20} /></div>
-          <span>التصنيفات</span>
-        </div>
-      </div>
+          <Link to="/play/multiplayer" className="action-card card-purple">
+            <div className="card-icon"><Users size={32} /></div>
+            <div className="card-info">
+              <h3>لعب جماعي</h3>
+              <p>تحدى أصدقاءك</p>
+            </div>
+            <div className="card-arrow"><Zap size={16} /></div>
+          </Link>
 
-      {/* Leaderboard Section (Simplified for Mobile) */}
-      <section className="leaderboard-section">
-        <div className="section-header">
-          <h2>أفضل اللاعبين 👑</h2>
-        </div>
-
-        <div className="leaderboard-list">
-          {topPlayers.length > 0 ? (
-            topPlayers.slice(0, 3).map((player, index) => (
-              <div key={index} className="player-row">
-                <div className="rank">#{index + 1}</div>
-                <div className="player-details">
-                  <strong>{player.username}</strong>
-                </div>
-                <div className="score-badge">{player.total_score}</div>
+          {!token && (
+            <Link to="/register" className="action-card card-orange">
+              <div className="card-icon"><User size={32} /></div>
+              <div className="card-info">
+                <h3>تسجيل حساب</h3>
+                <p>احفظ نقاطك</p>
               </div>
-            ))
-          ) : (
-            <div className="no-data">كن أول من يتصدر القائمة!</div>
+              <div className="card-arrow"><Crown size={16} /></div>
+            </Link>
           )}
         </div>
-      </section>
 
-      <div className="home-footer">
-        <p>© 2024 أوتوبيس كومبليت. جميع الحقوق محفوظة.</p>
+        {/* Features Row */}
+        <div className="features-row">
+          <div className="feature-item">
+            <span className="feat-icon">⚡</span>
+            <span>سرعة بديهة</span>
+          </div>
+          <div className="feature-item">
+            <span className="feat-icon">🧠</span>
+            <span>تفكير استراتيجي</span>
+          </div>
+          <div className="feature-item">
+            <span className="feat-icon">🏆</span>
+            <span>تصدر القائمة</span>
+          </div>
+        </div>
+
+        {/* About the Game Section */}
+        <section className="about-section">
+          <div className="section-title">
+            <Info className="text-purple-500" />
+            <h2>عن أوتوبيس كومبليت</h2>
+          </div>
+          <p>
+            لعبة "أوتوبيس كومبليت" هي النسخة الرقمية الحديثة من لعبة الكلمات الشهيرة "ولد بنت نبات حيوان جماد".
+            صممنا هذه اللعبة لتجمع بين المتعة الكلاسيكية والتقنية الحديثة، حيث يمكنك اللعب بمفردك لتطوير مهاراتك
+            أو تحدي أصدقائك في غرف لعب مباشرة.
+          </p>
+        </section>
+
+        {/* Quick Help Section */}
+        <section className="how-it-works">
+          <div className="section-title">
+            <BookOpen className="text-green-500" />
+            <h2>كيف تبدأ؟</h2>
+          </div>
+          <div className="steps-grid">
+            <div className="step-card">
+              <span className="step-num">1</span>
+              <h4>اختر الحرف</h4>
+              <p>يتم اختيار حرف عشوائي لبدء الجولة</p>
+            </div>
+            <div className="step-card">
+              <span className="step-num">2</span>
+              <h4>املأ الفئات</h4>
+              <p>اكتب كلمات تبدأ بالحرف في أسرع وقت</p>
+            </div>
+            <div className="step-card">
+              <span className="step-num">3</span>
+              <h4>اجمع النقاط</h4>
+              <p>كلما كنت أسرع وأكثر دقة، زادت نقاطك</p>
+            </div>
+          </div>
+          <Link to="/how-to-play" className="read-more-link">اقرأ القواعد كاملة →</Link>
+        </section>
+
+        {/* Download App Section */}
+        <section className="download-section">
+          <div className="download-card">
+            <div className="download-info">
+              <h3>حمل التطبيق الآن! 📱</h3>
+              <p>استمتع بتجربة لعب أفضل وأسرع عبر تطبيقاتنا للهواتف الذكية.</p>
+            </div>
+            <div className="app-buttons">
+              <a href="#" className="app-btn ios">
+                <Apple size={24} />
+                <div className="btn-txt">
+                  <span>Available on the</span>
+                  <strong>App Store</strong>
+                </div>
+              </a>
+              <a href="#" className="app-btn android">
+                <Smartphone size={24} />
+                <div className="btn-txt">
+                  <span>Get it on</span>
+                  <strong>Google Play</strong>
+                </div>
+              </a>
+            </div>
+          </div>
+        </section>
+
       </div>
 
       <style dangerouslySetInnerHTML={{
         __html: `
-        .mobile-home-landing {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 40px 24px;
-            text-align: center;
+        .home-container {
+            padding: 10px;
             direction: rtl;
-            min-height: 100vh;
+            width: 100%;
+        }
+
+        .home-content-wrapper {
+            max-width: 800px;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
-            background: radial-gradient(circle at top, #fdf4ff 0%, #ffffff 100%);
+            gap: 30px;
         }
 
-        .greeting-box { margin-bottom: 40px; position: relative; }
-        .bus-logo { 
-            width: 140px; 
-            height: 140px; 
-            background: white; 
-            border-radius: 40px; 
-            margin: 0 auto 25px;
+        .welcome-banner {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            border-radius: 24px;
+            padding: 30px;
+            color: white;
             display: flex;
             align-items: center;
-            justify-content: center;
-            box-shadow: 0 20px 40px rgba(168, 85, 247, 0.15);
-            transform: rotate(-5deg);
-            transition: transform 0.3s;
+            justify-content: space-between;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
-        .bus-logo:hover { transform: rotate(0deg) scale(1.05); }
-        .subtitle { font-size: 1.1rem; color: #9ca3af; font-weight: 600; margin-bottom: 8px; }
-        .greeting-box h1 { 
-            font-size: 2.8rem; 
-            color: #1f2937; 
-            font-weight: 900; 
-            letter-spacing: -1px; 
-            background: linear-gradient(135deg, #4b5563 0%, #1f2937 100%); 
-            -webkit-background-clip: text; 
-            -webkit-text-fill-color: transparent; 
+        .banner-text h1 { margin: 0; font-size: 2rem; }
+        .banner-text p { margin: 5px 0 0; opacity: 0.8; font-size: 1.1rem; }
+        .banner-icon { font-size: 3rem; }
+
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
         }
 
-        .menue-buttons { display: flex; flex-direction: column; gap: 16px; width: 100%; margin-bottom: 40px; }
-        .menu-btn {
+        .action-card {
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
             display: flex;
             align-items: center;
             gap: 20px;
-            padding: 20px 24px;
-            border-radius: 24px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-            width: 100%;
-            text-align: right;
+            text-decoration: none;
+            color: #1f2937;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
             position: relative;
             overflow: hidden;
-            text-decoration: none;
         }
-        .menu-btn:active { transform: scale(0.98); }
+        .action-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); }
+
+        .card-green:hover { border-color: #22c55e; }
+        .card-green .card-icon { background: #dcfce7; color: #16a34a; }
         
-        .btn-icon {
-            width: 48px; 
-            height: 48px; 
-            border-radius: 16px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            background: rgba(255,255,255,0.2); 
-            backdrop-filter: blur(5px);
-        }
+        .card-purple:hover { border-color: #a855f7; }
+        .card-purple .card-icon { background: #f3e8ff; color: #9333ea; }
+
+        .card-orange:hover { border-color: #f97316; }
+        .card-orange .card-icon { background: #ffedd5; color: #ea580c; }
+
+        .card-icon { width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; transition: transform 0.2s; }
+        .action-card:hover .card-icon { transform: scale(1.1); }
+
+        .card-info h3 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+        .card-info p { margin: 4px 0 0; color: #6b7280; font-size: 0.9rem; }
+
+        .card-arrow { margin-right: auto; color: #d1d5db; }
+
+        .features-row { display: flex; justify-content: space-around; padding: 20px; background: white; border-radius: 20px; border: 1px solid #f3f4f6; }
+        .feature-item { display: flex; flex-direction: column; align-items: center; gap: 8px; font-weight: 700; color: #4b5563; }
+        .feat-icon { font-size: 1.5rem; }
+
+        .section-title { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .section-title h2 { margin: 0; font-size: 1.5rem; font-weight: 800; color: #1f2937; }
+
+        .about-section p { line-height: 1.8; color: #4b5563; font-size: 1.1rem; background: white; padding: 25px; border-radius: 20px; border: 1px solid #f3f4f6; }
+
+        .steps-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 10px; }
+        .step-card { background: white; padding: 20px; border-radius: 20px; border: 1px solid #f3f4f6; text-align: center; }
+        .step-num { width: 30px; height: 30px; background: #f3f4f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; font-weight: 800; color: #6b7280; }
+        .step-card h4 { margin: 0 0 10px; color: #1f2937; }
+        .step-card p { margin: 0; font-size: 0.9rem; color: #6b7280; }
+        .read-more-link { display: inline-block; margin-top: 15px; color: #7c3aed; font-weight: 700; text-decoration: none; }
+
+        .download-section { margin-top: 20px; margin-bottom: 40px; }
+        .download-card { background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); padding: 40px; border-radius: 30px; color: white; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 30px; }
+        .download-info h3 { font-size: 2rem; margin: 0; font-weight: 900; }
+        .download-info p { margin: 10px 0 0; opacity: 0.9; font-size: 1.1rem; }
         
-        .btn-text { display: flex; flex-direction: column; gap: 2px; }
-        .btn-text span { font-size: 1.4rem; font-weight: 800; line-height: 1.2; }
-        .btn-text small { font-size: 0.9rem; opacity: 0.9; font-weight: 500; }
+        .app-buttons { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
+        .app-btn { background: black; color: white; padding: 10px 20px; border-radius: 12px; display: flex; align-items: center; gap: 12px; text-decoration: none; transition: transform 0.2s; min-width: 180px; text-align: left; }
+        .app-btn:hover { transform: translateY(-3px); }
+        .btn-txt { display: flex; flex-direction: column; }
+        .btn-txt span { font-size: 0.7rem; opacity: 0.7; }
+        .btn-txt strong { font-size: 1.1rem; }
 
-        .btn-green { background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); color: white; box-shadow: 0 15px 30px rgba(34, 197, 94, 0.2); }
-        .btn-purple { background: white; color: #7c3aed; border: 2px solid #7c3aed; box-shadow: 0 10px 20px rgba(124, 58, 237, 0.05); }
-        .btn-purple .btn-icon { background: #f3f4f6; color: #7c3aed; }
-
-        .features-mini-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 40px; }
-        .mini-card { 
-            background: white; 
-            padding: 15px 10px; 
-            border-radius: 16px; 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 8px; 
-            border: 1px solid #f3f4f6;
+        @media (max-width: 640px) {
+            .actions-grid { grid-template-columns: 1fr; }
+            .welcome-banner { flex-direction: column; text-align: center; gap: 20px; }
+            .banner-text h1 { font-size: 1.5rem; }
+            .app-buttons { flex-direction: column; width: 100%; }
+            .app-btn { width: 100%; }
         }
-        .mini-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
-        .icon-purple { background: #f3e8ff; color: #9333ea; }
-        .icon-orange { background: #ffedd5; color: #ea580c; }
-        .icon-green { background: #dcfce7; color: #16a34a; }
-        .mini-card span { font-size: 0.85rem; font-weight: 700; color: #4b5563; }
-
-        .leaderboard-section { background: white; border-radius: 24px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); margin-bottom: 30px; }
-        .section-header h2 { font-size: 1.2rem; margin-bottom: 15px; text-align: right; color: #1f2937; margin-bottom: 20px; }
-        .leaderboard-list { display: flex; flex-direction: column; gap: 12px; }
-        .player-row { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid #f3f4f6; }
-        .player-row:last-child { border-bottom: none; padding-bottom: 0; }
-        .rank { font-weight: 800; color: #9ca3af; width: 25px; }
-        .player-details { flex: 1; text-align: right; font-weight: 700; color: #374151; }
-        .score-badge { background: #f3f4f6; padding: 4px 10px; border-radius: 8px; font-weight: 700; color: #7c3aed; font-size: 0.9rem; }
-        .no-data { color: #9ca3af; font-size: 0.9rem; padding: 10px; }
-
-        .home-footer { margin-top: auto; color: #9ca3af; font-size: 0.8rem; padding-top: 20px; }
       `}} />
     </div>
   );

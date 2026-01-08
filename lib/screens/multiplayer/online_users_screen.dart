@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../services/socket_service.dart';
-import '../../services/auth_service.dart';
 import 'lobby_screen.dart';
 
 class OnlineUsersScreen extends StatefulWidget {
@@ -20,6 +19,21 @@ class _OnlineUsersScreenState extends State<OnlineUsersScreen> {
   void initState() {
     super.initState();
     final socketService = context.read<SocketService>();
+
+    // Initialize with cached data if available
+    final currentUsers = socketService.currentOnlineUsers;
+    if (currentUsers.isNotEmpty) {
+      _users = currentUsers;
+      _isLoading = false;
+    } else {
+      // If empty, we might really have no one or just started.
+      // We can keep loading true or set false if we trust the cache (which starts empty).
+      // Better to maybe check socket connection?
+      // For now, let's keep loading=true only if cache is empty & socket is connecting?
+      // Simplest: Just use cache. If cache is empty, it's empty.
+      _users = [];
+      _isLoading = false;
+    }
 
     // Listen for online users updates
     socketService.onlineUsersStream.listen((users) {

@@ -1,45 +1,74 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import StatsSidebar from './components/StatsSidebar';
 import Home from './pages/Home';
-import About from './pages/About';
-import PrivacyPolicy from './pages/PrivacyPolicy';
+import PlayModeSelection from './pages/PlayModeSelection';
+import SoloPlay from './pages/SoloPlay';
+import MultiplayerLobby from './pages/MultiplayerLobby';
+import MultiplayerGame from './pages/MultiplayerGame';
+import Footer from './components/Footer';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import PlayPage from './pages/Play';
 import History from './pages/History';
+import Profile from './pages/Profile';
+import Contact from './pages/Contact';
+import HowToPlay from './pages/HowToPlay';
+import ScrollToTop from './components/ScrollToTop';
+import Terms from './pages/Terms';
+import Privacy from './pages/Privacy';
 import { AuthProvider } from './context/AuthContext';
-import { GameProvider } from './context/GameContext';
 import { SocketProvider } from './context/SocketContext';
-import './index.css';
+import { GameProvider } from './context/GameContext';
+import { HelmetProvider } from 'react-helmet-async';
 
-function App() {
+const App = () => {
   return (
-    <AuthProvider>
-      <SocketProvider>
-        <GameProvider>
-          <Router>
-            <div className="page-container">
-              <Navbar />
-              <main className="main-content">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/about" element={<About />} />
-                  <Route path="/privacy" element={<PrivacyPolicy />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/play" element={<PlayPage />} />
-                  <Route path="/history" element={<History />} />
-                </Routes>
-              </main>
-              <Footer />
-            </div>
-          </Router>
-        </GameProvider>
-      </SocketProvider>
-    </AuthProvider>
+    <BrowserRouter>
+      <ScrollToTop />
+      <HelmetProvider>
+        <AuthProvider>
+          <SocketProvider>
+            <GameProvider>
+              <div className="app-layout">
+                <Navbar />
+
+                <div className="main-container">
+                  {/* Sidebar (Desktop Only - or collapsable) */}
+                  <div className="sidebar-wrapper">
+                    <StatsSidebar />
+                  </div>
+
+                  {/* Main Content Area */}
+                  <main className="content-area">
+                    <div className="content-scrollable">
+                      <Routes>
+                        <Route path="/" element={<Home />} />
+                        {/* Play mode selection */}
+                        <Route path="/play" element={<PlayModeSelection />} />
+                        <Route path="/play/solo" element={<SoloPlay />} />
+                        <Route path="/play/multiplayer" element={<MultiplayerLobby />} />
+                        <Route path="/play/multiplayer/room/:roomId" element={<MultiplayerGame />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/history" element={<History />} />
+                        <Route path="/profile" element={<Profile />} />
+                        <Route path="/contact" element={<Contact />} />
+                        <Route path="/how-to-play" element={<HowToPlay />} />
+                        <Route path="/terms" element={<Terms />} />
+                        <Route path="/privacy" element={<Privacy />} />
+                      </Routes>
+                      <Footer />
+                    </div>
+                  </main>
+                </div>
+              </div>
+            </GameProvider>
+          </SocketProvider>
+        </AuthProvider>
+      </HelmetProvider>
+    </BrowserRouter>
   );
-}
+};
 
 export default App;

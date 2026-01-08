@@ -115,7 +115,7 @@ class _RoundResultsScreenState extends State<RoundResultsScreen> {
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
                         headingRowColor:
-                            MaterialStateProperty.all(const Color(0xFFF3E8FF)),
+                            WidgetStateProperty.all(const Color(0xFFF3E8FF)),
                         columnSpacing: 20,
                         horizontalMargin: 20,
                         columns: [

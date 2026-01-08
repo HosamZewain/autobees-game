@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { createUser, getUserByUsername, getUserByEmail } = require('../data/database');
+const { createUser, getUserByUsername, getUserByEmail } = require('../data/database_sqlite');
 
 const SECRET_KEY = 'your_super_secret_key_change_in_prod'; // In a real app, use ENV variables
 
@@ -49,13 +49,20 @@ async function register(req, res) {
 
 async function login(req, res) {
     try {
-        const { email, password } = req.body;
+        const { email, username, password } = req.body;
+        const loginIdentifier = email || username;
 
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password required' });
+        if (!loginIdentifier || !password) {
+            return res.status(400).json({ error: 'Email/Username and password required' });
         }
 
-        const user = await getUserByEmail(email);
+        let user;
+        if (email) {
+            user = await getUserByEmail(email);
+        } else {
+            user = await getUserByUsername(username);
+        }
+
         if (!user) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
@@ -112,7 +119,7 @@ async function updateProfile(req, res) {
             passwordHash = await bcrypt.hash(password, 10);
         }
 
-        const { updateUserProfile } = require('../data/database');
+        const { updateUserProfile } = require('../data/database_sqlite');
         const updatedUser = await updateUserProfile(userId, username, passwordHash, dob, gender, profile_pic);
 
         // Return new token (since username might have changed) and user data

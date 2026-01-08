@@ -8,6 +8,8 @@ import Dictionary from './pages/Dictionary';
 import SettingsPage from './pages/Settings';
 import History from './pages/History';
 import SuggestionsPage from './pages/Suggestions';
+import Messages from './pages/Messages';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const ProtectedLayout = () => {
   const token = localStorage.getItem('admin_token');
@@ -36,6 +38,7 @@ function App() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/suggestions" element={<SuggestionsPage />} />
           <Route path="/history" element={<History />} />
+          <Route path="/messages" element={<Messages />} />
         </Route>
       </Routes>
     </Router>

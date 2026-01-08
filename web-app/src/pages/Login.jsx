@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Mail, Lock } from 'lucide-react';
+import SEO from '../components/SEO';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -28,6 +29,7 @@ const Login = () => {
 
   return (
     <div className="auth-page container">
+      <SEO title="تسجيل الدخول" description="قم بتسجيل الدخول إلى حسابك في أوتوبيس كومبليت لمنافسة أصدقائك وحفظ تقدمك." />
       <div className="auth-card">
         <div className="auth-header">
           <div className="icon-box"><LogIn size={32} /></div>
@@ -84,7 +86,7 @@ const Login = () => {
           align-items: center;
           min-height: 85vh;
           direction: rtl;
-          padding: 20px;
+          padding: 40px 20px 100px;
         }
         .auth-card {
           width: 100%;

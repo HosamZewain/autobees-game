@@ -10,46 +10,69 @@ export const SocketProvider = ({ children }) => {
     const [rooms, setRooms] = useState([]);
     const [currentRoom, setCurrentRoom] = useState(null);
     const [onlinePlayers, setOnlinePlayers] = useState(0);
+    const [onlineVisitors, setOnlineVisitors] = useState(0);
     const [roundResults, setRoundResults] = useState(null);
+    const [gameStarted, setGameStarted] = useState(null);
 
     useEffect(() => {
-        if (token) {
-            const newSocket = io('http://localhost:3000', {
-                auth: { token }
-            });
+        const socketOptions = token ? { auth: { token } } : {};
+        const newSocket = io('http://localhost:3000', socketOptions);
 
-            newSocket.on('connect', () => {
-                console.log('Connected to socket server');
-            });
+        newSocket.on('connect', () => {
+            console.log('Connected to socket server');
+        });
 
-            newSocket.on('rooms_list', (roomsList) => {
-                setRooms(roomsList);
-            });
+        newSocket.on('rooms_list', (roomsList) => {
+            setRooms(roomsList);
+        });
 
-            newSocket.on('room_updated', (room) => {
-                setCurrentRoom(room);
-                if (room.status === 'playing') {
-                    setRoundResults(null);
-                }
-            });
+        newSocket.on('room_updated', (room) => {
+            setCurrentRoom(room);
+            if (room.status === 'playing') {
+                setRoundResults(null);
+            }
+        });
 
-            newSocket.on('round_results', (results) => {
-                setRoundResults(results);
-            });
+        newSocket.on('round_results', (results) => {
+            console.log('📊 Received round_results:', results);
+            setRoundResults(results);
+        });
 
-            newSocket.on('online_players', (count) => {
-                setOnlinePlayers(count);
-            });
+        newSocket.on('online_players', (count) => {
+            setOnlinePlayers(count);
+        });
 
-            setSocket(newSocket);
+        newSocket.on('online_visitors', (count) => {
+            setOnlineVisitors(count);
+        });
 
-            return () => {
-                newSocket.disconnect();
-            };
-        } else {
+        newSocket.on('game_started', (data) => {
+            console.log('Game started:', data);
+            setGameStarted(data);
+            setRoundResults(null);
+        });
+
+        newSocket.on('game_finished', (data) => {
+            console.log('Game finished:', data);
+            if (currentRoom) {
+                setCurrentRoom({ ...currentRoom, status: 'finished' });
+            }
+        });
+
+        newSocket.on('room_closed', (data) => {
+            console.log('Room was closed by owner:', data);
+            setCurrentRoom(null);
+            setGameStarted(null);
+            setRoundResults(null);
+        });
+
+        setSocket(newSocket);
+
+        return () => {
+            newSocket.disconnect();
             setSocket(null);
             setCurrentRoom(null);
-        }
+        };
     }, [token]);
 
     const createRoom = (roomName) => {
@@ -68,6 +91,15 @@ export const SocketProvider = ({ children }) => {
         }
     };
 
+    const closeRoom = () => {
+        if (socket && currentRoom) {
+            socket.emit('close_room', { roomId: currentRoom.id });
+            setCurrentRoom(null);
+            setGameStarted(null);
+            setRoundResults(null);
+        }
+    };
+
     const startGame = () => {
         if (socket && currentRoom) {
             console.log("Starting game for room:", currentRoom.id);
@@ -77,7 +109,10 @@ export const SocketProvider = ({ children }) => {
 
     const submitAnswers = (answers) => {
         if (socket && currentRoom) {
+            console.log('Submitting answers:', { roomId: currentRoom.id, answers });
             socket.emit('submit_answers', { roomId: currentRoom.id, answers });
+        } else {
+            console.error('Cannot submit: socket or currentRoom is null', { socket: !!socket, currentRoom: !!currentRoom });
         }
     };
 
@@ -93,10 +128,13 @@ export const SocketProvider = ({ children }) => {
             rooms,
             currentRoom,
             onlinePlayers,
+            onlineVisitors,
             roundResults,
+            gameStarted,
             createRoom,
             joinRoom,
             leaveRoom,
+            closeRoom,
             startGame,
             submitAnswers,
             nextRound

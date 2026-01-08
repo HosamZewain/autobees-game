@@ -1,20 +1,22 @@
 const jwt = require('jsonwebtoken');
 const { SECRET_KEY } = require('../controllers/authController');
-const { getUserById } = require('../data/database');
+const { getUserById } = require('../data/database_sqlite');
 
 async function socketAuthMiddleware(socket, next) {
     try {
         const token = socket.handshake.auth.token;
 
         if (!token) {
-            return next(new Error('Authentication error: Token missing'));
+            socket.user = { isGuest: true };
+            return next();
         }
 
         const decoded = jwt.verify(token, SECRET_KEY);
         const user = await getUserById(decoded.id);
 
         if (!user) {
-            return next(new Error('Authentication error: User not found'));
+            socket.user = { isGuest: true };
+            return next();
         }
 
         socket.user = {
@@ -22,13 +24,15 @@ async function socketAuthMiddleware(socket, next) {
             username: user.username,
             wins: user.wins,
             losses: user.losses,
-            total_score: user.total_score
+            total_score: user.total_score,
+            isGuest: false
         };
 
         next();
     } catch (error) {
         console.error('Socket Auth Error:', error.message);
-        next(new Error('Authentication error: Invalid token'));
+        socket.user = { isGuest: true };
+        next();
     }
 }
 

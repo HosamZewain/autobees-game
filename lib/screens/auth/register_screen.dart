@@ -187,7 +187,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   border: Border.all(color: const Color(0xFFF3E8FF)),
                 ),
                 child: DropdownButtonFormField<String>(
-                  value: _selectedGender,
+                  initialValue: _selectedGender,
                   decoration: const InputDecoration(
                     border: InputBorder.none,
                     icon: Icon(Icons.people_rounded, color: Color(0xFFA855F7)),
