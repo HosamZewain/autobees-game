@@ -27,6 +27,75 @@ async function migrate() {
         // Disable foreign key checks for bulk insert
         await connection.query('SET FOREIGN_KEY_CHECKS = 0');
 
+        console.log('Creating Tables...');
+        const createTablesSQL = [
+            `CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(255) UNIQUE,
+                email VARCHAR(255) UNIQUE,
+                password_hash VARCHAR(255),
+                wins INT DEFAULT 0,
+                losses INT DEFAULT 0,
+                total_score INT DEFAULT 0,
+                role VARCHAR(50) DEFAULT 'user',
+                is_active TINYINT DEFAULT 1,
+                dob VARCHAR(50),
+                gender VARCHAR(50),
+                profile_pic TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`,
+            `CREATE TABLE IF NOT EXISTS settings (
+                \`key\` VARCHAR(100) PRIMARY KEY,
+                value TEXT
+            )`,
+            `CREATE TABLE IF NOT EXISTS dictionary (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                word VARCHAR(255) NOT NULL,
+                category VARCHAR(100) NOT NULL,
+                letter VARCHAR(10),
+                is_approved TINYINT DEFAULT 1,
+                UNIQUE KEY unique_word_cat (word, category)
+            )`,
+            `CREATE TABLE IF NOT EXISTS matches (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                room_id VARCHAR(100),
+                played_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                details JSON
+            )`,
+            `CREATE TABLE IF NOT EXISTS pending_words (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                word VARCHAR(255) NOT NULL,
+                category VARCHAR(100) NOT NULL,
+                letter VARCHAR(10) NOT NULL,
+                suggested_by INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (suggested_by) REFERENCES users(id) ON DELETE SET NULL,
+                UNIQUE KEY unique_pending (word, category)
+            )`,
+            `CREATE TABLE IF NOT EXISTS match_participants (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                match_id INT NOT NULL,
+                user_id INT NOT NULL,
+                score INT DEFAULT 0,
+                is_winner TINYINT DEFAULT 0,
+                FOREIGN KEY (match_id) REFERENCES matches(id) ON DELETE CASCADE,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )`,
+            `CREATE TABLE IF NOT EXISTS contact_messages (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(255) NOT NULL,
+                contact_info VARCHAR(255) NOT NULL,
+                message TEXT NOT NULL,
+                status VARCHAR(50) DEFAULT 'new',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`
+        ];
+
+        for (const sql of createTablesSQL) {
+            await connection.query(sql);
+        }
+
+
         // 1. Migrate Users
         console.log('Migrating Users...');
         const users = sqlite.prepare('SELECT * FROM users').all();
