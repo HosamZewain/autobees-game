@@ -60,10 +60,9 @@ const App = () => {
                         <Route path="/terms" element={<Terms />} />
                         <Route path="/privacy" element={<Privacy />} />
                       </Routes>
-                      <Footer />
-                    </div>
                   </main>
                 </div>
+                <Footer />
               </div>
             </GameProvider>
           </SocketProvider>

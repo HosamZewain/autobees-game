@@ -13,9 +13,13 @@ async function register(req, res) {
         }
 
         const existingUser = await getUserByUsername(username);
-        // Note: Should also check email existence ideally, but let's trust database constraints or add a check
         if (existingUser) {
             return res.status(400).json({ error: 'Username already exists' });
+        }
+
+        const existingEmail = await getUserByEmail(email);
+        if (existingEmail) {
+            return res.status(400).json({ error: 'Email already exists' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -39,11 +43,12 @@ async function register(req, res) {
             }
         });
     } catch (error) {
-        if (error.code === 'ER_DUP_ENTRY') {
+        // Handle SQLite Unique Constraint Error
+        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE' || error.message.includes('UNIQUE constraint failed')) {
             return res.status(400).json({ error: 'Username or Email already exists' });
         }
         console.error('Register error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
 }
 
