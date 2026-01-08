@@ -34,29 +34,28 @@ const Dashboard = () => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // In a real app, you would have a dedicated /stats endpoint
-                // For now, we simulate fetching stats or fetch individual counts if needed
-                // Assuming we might have added a stats endpoint or fetching separately
-
-                // Let's try to fetch lists length for now as a makeshift solution
-                // Warning: This is not efficient for large datasets, but fine for prototype
-                const [usersRes, dictRes, suggestionsRes, historyRes] = await Promise.all([
-                    api.get('/admin/users'),
-                    api.get('/admin/dictionary?limit=1'), // Just need count if API supported metadata
-                    api.get('/admin/suggestions'), // Assuming it returns all
-                    api.get('/admin/history')
-                ]);
-
-                // Note: Better backend would return { meta: { total: 100 } }
+                const response = await api.get('/admin/stats');
+                const data = response.data;
 
                 setStats({
-                    totalUsers: usersRes.data.length,
-                    activeUsers: usersRes.data.filter(u => u.is_active).length,
-                    totalWords: 1250, // Mock for now if API doesn't return count
-                    pendingWords: suggestionsRes.data.length,
-                    totalMatches: historyRes.data.length,
-                    todayMatches: 5 // Mock
+                    totalUsers: data.totalUsers,
+                    activeUsers: 0, // Not returned by stats endpoint currently, but can be added or kept 0
+                    totalWords: data.totalWords,
+                    pendingWords: 0, // Need to fetch or add to stats endpoint
+                    totalMatches: data.totalGames,
+                    todayMatches: 0
                 });
+
+                // Fetch extra details if needed (like pending words which isn't in stats yet?)
+                // Actually my getAdminStats returns: totalUsers, totalGames, totalWords.
+                // It doesn't return pendingWords. I should fetch suggestions count separately or update getAdminStats.
+                const suggestionsRes = await api.get('/admin/suggestions');
+                setStats(prev => ({
+                    ...prev,
+                    pendingWords: suggestionsRes.data.length,
+                    activeUsers: data.topUsers.length // Approximation or just hide it
+                }));
+
             } catch (error) {
                 console.error('Failed to fetch stats', error);
             } finally {

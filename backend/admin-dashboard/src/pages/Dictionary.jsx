@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
-import { Trash2, Plus, Search, Filter } from 'lucide-react';
+import { Trash2, Plus, Search, Filter, Upload } from 'lucide-react';
 
 const Dictionary = () => {
     const [words, setWords] = useState([]);
@@ -48,6 +48,35 @@ const Dictionary = () => {
             fetchWords();
         } catch (error) {
             alert('Failed to add word');
+        }
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            if (!confirm('Import words from ' + file.name + '?')) {
+                e.target.value = null;
+                return;
+            }
+
+            setLoading(true);
+            const response = await api.post('/admin/dictionary/import', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+
+            alert(`Import Successful!\nAdded: ${response.data.added}\nIgnored (Duplicates): ${response.data.ignored}`);
+            fetchWords();
+        } catch (error) {
+            console.error('Import failed', error);
+            alert('Import Failed: ' + (error.response?.data?.error || error.message));
+        } finally {
+            setLoading(false);
+            e.target.value = null;
         }
     };
 
@@ -132,6 +161,29 @@ const Dictionary = () => {
                             Add Word
                         </button>
                     </form>
+                </div>
+
+                {/* Import Excel Card */}
+                <div className="card h-fit">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <Upload className="text-green-600" size={20} /> Import Excel
+                    </h3>
+                    <div className="flex flex-col gap-4">
+                        <p className="text-sm text-gray-500">
+                            Upload .xlsx file with columns: <b>word</b>, category, letter
+                        </p>
+                        <input
+                            type="file"
+                            accept=".xlsx, .xls, .csv"
+                            onChange={handleFileUpload}
+                            className="block w-full text-sm text-gray-500
+                                file:mr-4 file:py-2 file:px-4
+                                file:rounded-full file:border-0
+                                file:text-sm file:font-semibold
+                                file:bg-green-50 file:text-green-700
+                                hover:file:bg-green-100"
+                        />
+                    </div>
                 </div>
 
                 {/* Filters & List */}

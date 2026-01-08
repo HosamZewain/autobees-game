@@ -18,14 +18,27 @@ export const GameProvider = ({ children }) => {
 
     const categories = ["ولد", "بنت", "حيوان", "جماد", "نبات", "بلد", "شخصية مشهورة"];
     const validLetters = ['أ', 'ب', 'ت', 'ث', 'ج', 'ح', 'خ', 'د', 'ذ', 'ر', 'ز', 'س', 'ش', 'ص', 'ض', 'ط', 'ظ', 'ع', 'غ', 'ف', 'ق', 'ك', 'ل', 'م', 'ن', 'هـ', 'و', 'ي'];
+    const answersRef = useRef(answers);
+    const currentLetterRef = useRef(currentLetter);
+
+    // Keep refs updated
+    useEffect(() => {
+        answersRef.current = answers;
+        currentLetterRef.current = currentLetter;
+    }, [answers, currentLetter]);
 
     const startGame = () => {
         const letter = validLetters[Math.floor(Math.random() * validLetters.length)];
         setCurrentLetter(letter);
+        currentLetterRef.current = letter; // Update ref immediately
+
         setTimeLeft(60);
         setIsPlaying(true);
         setResults(null);
-        setAnswers(categories.reduce((acc, cat) => ({ ...acc, [cat]: '' }), {}));
+
+        const initialAnswers = categories.reduce((acc, cat) => ({ ...acc, [cat]: '' }), {});
+        setAnswers(initialAnswers);
+        answersRef.current = initialAnswers; // Update ref immediately
 
         if (timerRef.current) clearInterval(timerRef.current);
         timerRef.current = setInterval(() => {
@@ -54,17 +67,21 @@ export const GameProvider = ({ children }) => {
         const finalResults = {};
         let totalScore = 0;
 
-        for (const category of categories) {
-            const word = answers[category]?.trim() || '';
+        // Use refs to get latest state during async/timer callbacks
+        const currentAnswers = answersRef.current;
+        const letterToCheck = currentLetterRef.current;
 
-            if (!word || !word.startsWith(currentLetter)) {
+        for (const category of categories) {
+            const word = currentAnswers[category]?.trim() || '';
+
+            if (!word || !word.startsWith(letterToCheck)) {
                 finalResults[category] = { word, isCorrect: false, score: 0 };
                 continue;
             }
 
             try {
                 const response = await axios.post(`${API_URL}/dictionary/validate`,
-                    { word, category, letter: currentLetter },
+                    { word, category, letter: letterToCheck },
                     { headers: { Authorization: `Bearer ${token}` } }
                 );
 
@@ -86,7 +103,7 @@ export const GameProvider = ({ children }) => {
                 await axios.post(`${API_URL}/matches/log`, {
                     details: {
                         players: [{ name: user?.username || 'Guest', score: totalScore }],
-                        config: { letter: currentLetter },
+                        config: { letter: letterToCheck },
                         scores: { solo: totalScore }
                     }
                 }, { headers: { Authorization: `Bearer ${token}` } });

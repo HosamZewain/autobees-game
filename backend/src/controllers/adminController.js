@@ -130,6 +130,42 @@ exports.deleteWord = async (req, res) => {
     }
 };
 
+exports.importWords = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    try {
+        // Require xlsx here or at top. It was required inside try block in previous version.
+        const xlsx = require('xlsx');
+        const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+        const sheetName = workbook.SheetNames[0];
+        const rows = xlsx.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+        if (!rows || rows.length === 0) {
+            return res.status(400).json({ error: 'Empty file' });
+        }
+
+        const validWords = [];
+        for (const row of rows) {
+            // Check for various column names (Arabic or English)
+            const word = row['word'] || row['Word'] || row['الكلمة'] || row['كلمة'];
+            const category = row['category'] || row['Category'] || row['التصنيف'] || row['تصنيف'] || 'ولد';
+            const letter = row['letter'] || row['Letter'] || row['الحرف'] || row['حرف'];
+
+            if (word) {
+                validWords.push({ word: String(word), category: String(category), letter: letter ? String(letter) : null });
+            }
+        }
+
+        const result = await db.bulkAddWords(validWords);
+        res.json(result);
+    } catch (error) {
+        console.error('Import Error:', error);
+        res.status(500).json({ error: 'Failed to process file' });
+    }
+};
+
 // --- History ---
 exports.getMatchHistory = async (req, res) => {
     try {
@@ -186,6 +222,32 @@ exports.createFirstAdmin = async (req, res) => {
 
         res.json({ message: 'Admin created successfully' });
     } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.bulkApproveSuggestions = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids)) return res.status(400).json({ error: 'ids must be an array' });
+
+        const result = await db.approveSuggestionsBulk(ids);
+        res.json({ success: true, ...result });
+    } catch (err) {
+        console.error('Bulk Approve Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+};
+
+exports.bulkRejectSuggestions = async (req, res) => {
+    try {
+        const { ids } = req.body;
+        if (!Array.isArray(ids)) return res.status(400).json({ error: 'ids must be an array' });
+
+        const count = await db.deletePendingWordsBulk(ids);
+        res.json({ success: true, deleted: count });
+    } catch (err) {
+        console.error('Bulk Reject Error:', err);
         res.status(500).json({ error: err.message });
     }
 };

@@ -6,11 +6,56 @@ const SuggestionsPage = () => {
     const [suggestions, setSuggestions] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    const [selectedIds, setSelectedIds] = useState([]);
+
+    const toggleSelectAll = () => {
+        if (selectedIds.length === suggestions.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(suggestions.map(s => s.id));
+        }
+    };
+
+    const toggleSelect = (id) => {
+        if (selectedIds.includes(id)) {
+            setSelectedIds(selectedIds.filter(sid => sid !== id));
+        } else {
+            setSelectedIds([...selectedIds, id]);
+        }
+    };
+
+    const handleBulkApprove = async () => {
+        if (!confirm(`Approve ${selectedIds.length} suggestions?`)) return;
+        try {
+            const res = await api.post('/admin/suggestions/approve-bulk', { ids: selectedIds });
+            alert(`Approved ${res.data.added} words!`);
+            setSuggestions(suggestions.filter(s => !selectedIds.includes(s.id)));
+            setSelectedIds([]);
+        } catch (error) {
+            console.error(error);
+            alert('Bulk Action Failed');
+        }
+    };
+
+    const handleBulkReject = async () => {
+        if (!confirm(`Reject/Delete ${selectedIds.length} suggestions?`)) return;
+        try {
+            const res = await api.post('/admin/suggestions/reject-bulk', { ids: selectedIds });
+            alert(`Deleted ${res.data.deleted} words.`);
+            setSuggestions(suggestions.filter(s => !selectedIds.includes(s.id)));
+            setSelectedIds([]);
+        } catch (error) {
+            console.error(error);
+            alert('Bulk Action Failed');
+        }
+    };
+
     const fetchSuggestions = async () => {
         try {
             setLoading(true);
             const response = await api.get('/admin/suggestions');
             setSuggestions(response.data);
+            setSelectedIds([]); // Reset selection on refresh
         } catch (error) {
             console.error('Failed to fetch suggestions', error);
         } finally {
@@ -43,12 +88,31 @@ const SuggestionsPage = () => {
 
     return (
         <div className="p-6">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
-                    <Lightbulb className="text-purple-600" />
-                    Word Suggestions
-                </h1>
-                <p className="text-gray-500 mt-1">Review and accept crowdsourced words from players</p>
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
+                        <Lightbulb className="text-purple-600" />
+                        Word Suggestions
+                    </h1>
+                    <p className="text-gray-500 mt-1">Review and accept crowdsourced words from players</p>
+                </div>
+
+                {selectedIds.length > 0 && (
+                    <div className="flex gap-2 animate-in fade-in slide-in-from-top-2">
+                        <button
+                            onClick={handleBulkApprove}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-xl shadow-lg hover:bg-green-700 transition"
+                        >
+                            <Check size={18} /> Approve Selected ({selectedIds.length})
+                        </button>
+                        <button
+                            onClick={handleBulkReject}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl shadow-lg hover:bg-red-700 transition"
+                        >
+                            <Trash2 size={18} /> Reject Selected ({selectedIds.length})
+                        </button>
+                    </div>
+                )}
             </div>
 
             <div className="card p-0 overflow-hidden">
@@ -67,6 +131,14 @@ const SuggestionsPage = () => {
                         <table>
                             <thead>
                                 <tr>
+                                    <th className="w-10">
+                                        <input
+                                            type="checkbox"
+                                            checked={suggestions.length > 0 && selectedIds.length === suggestions.length}
+                                            onChange={toggleSelectAll}
+                                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-4 h-4"
+                                        />
+                                    </th>
                                     <th>Word</th>
                                     <th>Category</th>
                                     <th>Letter</th>
@@ -77,7 +149,15 @@ const SuggestionsPage = () => {
                             </thead>
                             <tbody>
                                 {suggestions.map(suggestion => (
-                                    <tr key={suggestion.id}>
+                                    <tr key={suggestion.id} className={selectedIds.includes(suggestion.id) ? 'bg-purple-50' : ''}>
+                                        <td>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.includes(suggestion.id)}
+                                                onChange={() => toggleSelect(suggestion.id)}
+                                                className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 w-4 h-4"
+                                            />
+                                        </td>
                                         <td>
                                             <span className="text-lg font-extrabold text-gray-800">{suggestion.word}</span>
                                         </td>

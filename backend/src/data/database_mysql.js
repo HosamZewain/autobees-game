@@ -7,6 +7,7 @@ const pool = mysql.createPool({
     user: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_NAME || 'autobees_db',
+    port: process.env.DB_PORT || 3306,
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0,
@@ -244,6 +245,8 @@ async function addWord(word, category, letter = null) {
     const targetLetter = letter || normalizedWord.charAt(0);
     const normalizedLetter = normalizeArabic(targetLetter);
 
+    console.log(`[AddWord] Inserting: "${normalizedWord}" (${category}) [${normalizedLetter}]`);
+
     const [result] = await pool.execute(
         'INSERT IGNORE INTO dictionary (word, category, letter) VALUES (?, ?, ?)',
         [normalizedWord, category, normalizedLetter]
@@ -370,10 +373,23 @@ async function getPendingWords() {
 async function approveWord(id) {
     const [rows] = await pool.execute('SELECT * FROM pending_words WHERE id = ?', [id]);
     const row = rows[0];
-    if (!row) return;
+    if (!row) {
+        console.log(`[ApproveWord] Suggestion ${id} not found.`);
+        return;
+    }
 
     const { word, category, letter } = row;
-    await addWord(word, category, letter);
+    console.log(`[ApproveWord] Approving: "${word}" (${category}) [${letter}]`);
+
+    // Add to dictionary
+    const result = await addWord(word, category, letter);
+
+    if (result.id === 0) {
+        console.log(`[ApproveWord] Word was IGNORED (Duplicate): "${word}" (${category})`);
+    } else {
+        console.log(`[ApproveWord] Word ADDED with ID ${result.id}: "${word}" (${category})`);
+    }
+
     await deletePendingWord(id);
 }
 
@@ -459,5 +475,93 @@ module.exports = {
     getContactMessages,
     updateContactMessageStatus,
     deleteContactMessage,
-    getAdminStats
+    getAdminStats,
+    getAdminStats,
+    bulkAddWords,
+    approveSuggestionsBulk,
+    deletePendingWordsBulk
 };
+
+async function bulkAddWords(wordsData) {
+    if (!wordsData || wordsData.length === 0) return { added: 0, ignored: 0 };
+
+    let added = 0;
+    let ignored = 0;
+    const connection = await pool.getConnection();
+
+    try {
+        await connection.beginTransaction();
+
+        // Prepare bulk insert
+        // Since we need to normalize each one, we can either do it in JS loop then one big INSERT
+        // or loop inserts. For 1000s of words, one big INSERT is better but might hit packet limit.
+        // Let's do batches of 500.
+
+        const BATCH_SIZE = 500;
+        for (let i = 0; i < wordsData.length; i += BATCH_SIZE) {
+            const batch = wordsData.slice(i, i + BATCH_SIZE);
+            const values = [];
+            const placeholders = [];
+
+            for (const item of batch) {
+                const normalizedWord = normalizeArabic(item.word.trim());
+                const letter = item.letter ? normalizeArabic(item.letter) : normalizedWord.charAt(0);
+                values.push(normalizedWord, item.category, letter);
+                placeholders.push('(?, ?, ?)');
+            }
+
+            if (values.length > 0) {
+                const query = `INSERT IGNORE INTO dictionary (word, category, letter) VALUES ${placeholders.join(', ')}`;
+                const [result] = await connection.execute(query, values);
+                added += result.affectedRows;
+                ignored += (batch.length - result.affectedRows);
+            }
+        }
+
+        await connection.commit();
+        return { added, ignored };
+    } catch (err) {
+        await connection.rollback();
+        console.error("Bulk Add Error:", err);
+        throw err;
+    } finally {
+        connection.release();
+    }
+}
+
+async function approveSuggestionsBulk(ids) {
+    if (!ids || ids.length === 0) return { added: 0 };
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        // 1. Move to dictionary (INSERT IGNORE)
+        // mysql2 allows 'IN (?)' to be expanded if passed as an array [ids]
+        const [result] = await connection.query(
+            'INSERT IGNORE INTO dictionary (word, category, letter, is_approved) SELECT word, category, letter, 1 FROM pending_words WHERE id IN (?)',
+            [ids]
+        );
+
+        const added = result.affectedRows;
+
+        // 2. Delete from pending_words
+        await connection.query('DELETE FROM pending_words WHERE id IN (?)', [ids]);
+
+        await connection.commit();
+        return { added };
+    } catch (err) {
+        await connection.rollback();
+        console.error("Bulk Approve Error:", err);
+        throw err;
+    } finally {
+        connection.release();
+    }
+}
+
+async function deletePendingWordsBulk(ids) {
+    if (!ids || ids.length === 0) return 0;
+    // Using pool.query directly expands nested arrays for IN (?)
+    const [result] = await pool.query('DELETE FROM pending_words WHERE id IN (?)', [ids]);
+    return result.affectedRows;
+}

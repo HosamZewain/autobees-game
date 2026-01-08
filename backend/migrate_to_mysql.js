@@ -11,15 +11,19 @@ const sqlite = new sqlite3(sqlitePath);
 async function migrate() {
     console.log('Starting migration from SQLite to MySQL...');
 
-    const pool = mysql.createPool({
+    const dbConfig = {
         host: process.env.DB_HOST || 'localhost',
         user: process.env.DB_USER || 'root',
         password: process.env.DB_PASSWORD || '',
         database: process.env.DB_NAME || 'autobees_db',
+        port: process.env.DB_PORT || 3306,
         waitForConnections: true,
         connectionLimit: 1,
         multipleStatements: true
-    });
+    };
+    console.log('Connecting to MySQL with:', { ...dbConfig, password: '***' });
+
+    const pool = mysql.createPool(dbConfig);
 
     const connection = await pool.getConnection();
 

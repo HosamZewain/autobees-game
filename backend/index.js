@@ -55,14 +55,19 @@ adminRouter.post('/users/:id/status', adminController.toggleUserStatus);
 adminRouter.delete('/users/:id', adminController.deleteUser);
 adminRouter.get('/settings', adminController.getSettings);
 adminRouter.post('/settings', adminController.updateSettings);
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
+
 adminRouter.get('/dictionary', adminController.getDictionary);
 adminRouter.post('/dictionary', adminController.addWord);
-adminRouter.post('/dictionary', adminController.addWord);
+adminRouter.post('/dictionary/import', upload.single('file'), adminController.importWords);
 adminRouter.delete('/dictionary/:id', adminController.deleteWord);
 adminRouter.get('/history', adminController.getMatchHistory);
 
 // Suggestions
 adminRouter.get('/suggestions', adminController.getSuggestions);
+adminRouter.post('/suggestions/approve-bulk', adminController.bulkApproveSuggestions);
+adminRouter.post('/suggestions/reject-bulk', adminController.bulkRejectSuggestions);
 adminRouter.post('/suggestions/:id/approve', adminController.approveSuggestion);
 adminRouter.delete('/suggestions/:id', adminController.deleteSuggestion);
 
