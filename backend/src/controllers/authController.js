@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { createUser, getUserByUsername, getUserByEmail } = require('../data/database_sqlite');
+const { createUser, getUserByUsername, getUserByEmail } = require('../data/database_mysql');
 
 const SECRET_KEY = 'your_super_secret_key_change_in_prod'; // In a real app, use ENV variables
 
@@ -113,7 +113,7 @@ async function updateProfile(req, res) {
         }
 
         // Check availability
-        const { getUserByUsername, getUserByEmail, updateUserProfile } = require('../data/database_sqlite');
+        const { getUserByUsername, getUserByEmail, updateUserProfile } = require('../data/database_mysql');
 
         // Check username
         const existingUser = await getUserByUsername(username);
@@ -163,7 +163,7 @@ async function updateProfile(req, res) {
 async function getPublicProfile(req, res) {
     try {
         const idOrUsername = req.params.id;
-        const { getUserById, getUserByUsername } = require('../data/database_sqlite');
+        const { getUserById, getUserByUsername } = require('../data/database_mysql');
 
         let user;
         // Check if input is purely numeric (ID) or string (Username)

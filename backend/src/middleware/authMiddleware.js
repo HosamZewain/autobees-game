@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { SECRET_KEY } = require('../controllers/authController');
-const { getUserById } = require('../data/database_sqlite');
+const { getUserById } = require('../data/database_mysql');
 
 async function socketAuthMiddleware(socket, next) {
     try {

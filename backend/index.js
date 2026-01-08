@@ -4,7 +4,7 @@ const { Server } = require("socket.io");
 const cors = require('cors');
 const path = require('path');
 const { register, login } = require('./src/controllers/authController');
-const { updateUserStats, db, logMatch, checkWord, suggestWord, getTopPlayers } = require('./src/data/database_sqlite');
+const { updateUserStats, db, logMatch, checkWord, suggestWord, getTopPlayers, getAdminStats } = require('./src/data/database_mysql');
 const { socketAuthMiddleware, expressAuthMiddleware } = require('./src/middleware/authMiddleware');
 const adminMiddleware = require('./src/middleware/adminMiddleware');
 const adminController = require('./src/controllers/adminController');
@@ -69,7 +69,7 @@ adminRouter.delete('/suggestions/:id', adminController.deleteSuggestion);
 // Contact Messages
 adminRouter.get('/messages', async (req, res) => {
     try {
-        const { getContactMessages } = require('./src/data/database_sqlite');
+        const { getContactMessages } = require('./src/data/database_mysql');
         const messages = await getContactMessages();
         res.json(messages);
     } catch (err) {
@@ -79,7 +79,7 @@ adminRouter.get('/messages', async (req, res) => {
 
 adminRouter.put('/messages/:id/status', async (req, res) => {
     try {
-        const { updateContactMessageStatus } = require('./src/data/database_sqlite');
+        const { updateContactMessageStatus } = require('./src/data/database_mysql');
         const { status } = req.body;
         await updateContactMessageStatus(req.params.id, status);
         res.json({ success: true });
@@ -90,7 +90,7 @@ adminRouter.put('/messages/:id/status', async (req, res) => {
 
 adminRouter.delete('/messages/:id', async (req, res) => {
     try {
-        const { deleteContactMessage } = require('./src/data/database_sqlite');
+        const { deleteContactMessage } = require('./src/data/database_mysql');
         await deleteContactMessage(req.params.id);
         res.json({ success: true });
     } catch (err) {
@@ -102,14 +102,8 @@ adminRouter.delete('/messages/:id', async (req, res) => {
 // Admin Stats (Logic lives here to access 'rooms')
 adminRouter.get('/stats', async (req, res) => {
     try {
-        const topUsers = db.prepare("SELECT username, wins, total_score FROM users ORDER BY wins DESC, total_score DESC LIMIT 10").all();
-        const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get();
-        const matchCount = db.prepare("SELECT COUNT(*) as count FROM matches").get();
-        const wordCount = db.prepare("SELECT COUNT(*) as count FROM dictionary").get();
-
-        const totalUsers = userCount?.count || 0;
-        const totalGames = matchCount?.count || 0;
-        const totalWords = wordCount?.count || 0;
+        const stats = await getAdminStats();
+        const { totalUsers, totalGames, totalWords, topUsers } = stats;
 
         const roomsDetails = [];
         let connectedPlayers = 0;
@@ -183,7 +177,7 @@ app.get('/api/leaderboard', async (req, res) => {
 app.get('/api/history', expressAuthMiddleware, async (req, res) => {
     console.log(`[History API] Request received for user ${req.user.id}`);
     try {
-        const { getUserMatches } = require('./src/data/database_sqlite');
+        const { getUserMatches } = require('./src/data/database_mysql');
         console.log(`[History API] Fetching matches from DB...`);
         const history = await getUserMatches(req.user.id);
         console.log(`[History API] Found ${history.length} matches. Sending response.`);
@@ -201,7 +195,7 @@ app.post('/api/contact', async (req, res) => {
         if (!name || !contact_info || !message) {
             return res.status(400).json({ error: 'All fields are required' });
         }
-        const { createContactMessage } = require('./src/data/database_sqlite');
+        const { createContactMessage } = require('./src/data/database_mysql');
         await createContactMessage(name, contact_info, message);
         res.json({ success: true });
     } catch (err) {
@@ -723,7 +717,7 @@ async function calculateScores(room, allAnswers) {
                 } else {
                     // 2. Dictionary Validation
                     try {
-                        const exists = checkWord(rawVal, cat, room.currentLetter);
+                        const exists = await checkWord(rawVal, cat, room.currentLetter);
                         if (!exists) {
                             results[p.id].categories[cat] = { value: rawVal, score: 0, type: "red" };
                         } else {

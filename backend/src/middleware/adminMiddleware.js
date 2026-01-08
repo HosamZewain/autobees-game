@@ -1,4 +1,4 @@
-const { getUserById } = require('../data/database_sqlite');
+const { getUserById } = require('../data/database_mysql');
 
 async function adminMiddleware(req, res, next) {
     try {
