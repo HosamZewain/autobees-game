@@ -27,6 +27,13 @@ export const GameProvider = ({ children }) => {
         currentLetterRef.current = currentLetter;
     }, [answers, currentLetter]);
 
+    // Check for timer expiry
+    useEffect(() => {
+        if (timeLeft === 0 && isPlaying) {
+            finishGame();
+        }
+    }, [timeLeft, isPlaying]);
+
     const startGame = () => {
         const letter = validLetters[Math.floor(Math.random() * validLetters.length)];
         setCurrentLetter(letter);
@@ -44,7 +51,6 @@ export const GameProvider = ({ children }) => {
         timerRef.current = setInterval(() => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
-                    finishGame();
                     return 0;
                 }
                 return prev - 1;
@@ -62,6 +68,15 @@ export const GameProvider = ({ children }) => {
         setAnswers((prev) => ({ ...prev, [category]: value }));
     };
 
+    // Helper to normalize Arabic
+    const normalizeArabic = (text) => {
+        if (!text) return "";
+        return text
+            .replace(/[إأآ]/g, 'ا') // Normalize Alef
+            .replace(/ة/g, 'ه')     // Normalize Ta Marbuta
+            .replace(/ى/g, 'ي');    // Normalize Ya
+    };
+
     const validateAnswers = async () => {
         setIsValidating(true);
         const finalResults = {};
@@ -70,11 +85,14 @@ export const GameProvider = ({ children }) => {
         // Use refs to get latest state during async/timer callbacks
         const currentAnswers = answersRef.current;
         const letterToCheck = currentLetterRef.current;
+        const normalizedLetter = normalizeArabic(letterToCheck);
 
         for (const category of categories) {
             const word = currentAnswers[category]?.trim() || '';
+            const normalizedWord = normalizeArabic(word);
 
-            if (!word || !word.startsWith(letterToCheck)) {
+            // Frontend check with normalization
+            if (!word || !normalizedWord.startsWith(normalizedLetter)) {
                 finalResults[category] = { word, isCorrect: false, score: 0 };
                 continue;
             }
