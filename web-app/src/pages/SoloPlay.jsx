@@ -147,10 +147,7 @@ const SoloPlay = () => {
                         <Timer size={24} />
                         <h2>{timeLeft}</h2>
                     </div>
-                    <button onClick={finishGame} className="btn btn-primary px-6 rounded-xl">
-                        <Send size={20} className="mr-2" />
-                        إنهاء
-                    </button>
+
                     <button onClick={() => navigate('/')} className="btn btn-ghost" style={{ marginRight: 'auto' }}>
                         <LogOut size={20} />
                     </button>
@@ -171,6 +168,17 @@ const SoloPlay = () => {
                             />
                         </div>
                     ))}
+                </div>
+
+                {/* Bottom Action Button */}
+                <div className="mt-8 mb-20 animate-fade-in-up" style={{ animationDelay: '300ms' }}>
+                    <button
+                        onClick={finishGame}
+                        className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xl font-black py-5 rounded-2xl shadow-lg shadow-purple-200 transform transition-all active:scale-95 flex items-center justify-center gap-3"
+                    >
+                        <Send size={24} />
+                        <span>إنهاء وإرسال الإجابات</span>
+                    </button>
                 </div>
             </div>
         );
