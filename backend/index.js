@@ -52,6 +52,7 @@ adminRouter.get('/users', adminController.getUsers);
 adminRouter.post('/users', adminController.createUser);
 adminRouter.put('/users/:id', adminController.editUser);
 adminRouter.post('/users/:id/status', adminController.toggleUserStatus);
+adminRouter.delete('/users/:id', adminController.deleteUser);
 adminRouter.get('/settings', adminController.getSettings);
 adminRouter.post('/settings', adminController.updateSettings);
 adminRouter.get('/dictionary', adminController.getDictionary);

@@ -22,12 +22,13 @@ async function resetPassword() {
         } else {
             console.log(`❌ User "${username}" not found in database.`);
 
-            // Check if any admin exists
-            const anyAdmin = db.prepare("SELECT username FROM users WHERE role = 'admin' LIMIT 1").get();
-            if (anyAdmin) {
-                console.log(`Found another admin: "${anyAdmin.username}". Updating that instead...`);
-                db.prepare('UPDATE users SET password_hash = ? WHERE username = ?').run(hashedPassword, anyAdmin.username);
-                console.log(`✅ Password for "${anyAdmin.username}" has been reset to: ${newPassword}`);
+            // Try to create the admin user
+            try {
+                console.log(`Creating new admin user "${username}"...`);
+                db.prepare('INSERT INTO users (username, email, password_hash, role, wins, losses, total_score) VALUES (?, ?, ?, ?, 0, 0, 0)').run(username, 'admin@autobees.site', hashedPassword, 'admin');
+                console.log(`✅ Created new admin user: "${username}" with password: ${newPassword}`);
+            } catch (insertError) {
+                console.error("Failed to create admin user:", insertError);
             }
         }
     } catch (error) {

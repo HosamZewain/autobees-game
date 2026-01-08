@@ -67,6 +67,16 @@ exports.editUser = async (req, res) => {
     }
 };
 
+exports.deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await db.deleteUser(id);
+        res.json({ message: 'User deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 // --- Settings ---
 exports.getSettings = async (req, res) => {
     try {

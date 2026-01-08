@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import api from '../api';
-import { Trash2, Plus } from 'lucide-react';
+import { Trash2, Plus, Search, Filter } from 'lucide-react';
 
 const Dictionary = () => {
     const [words, setWords] = useState([]);
     const [category, setCategory] = useState('');
-    const [letter, setLetter] = useState(''); // Filter
+    const [letter, setLetter] = useState('');
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
+    const [loading, setLoading] = useState(false);
 
     const [newWord, setNewWord] = useState('');
     const [newCategory, setNewCategory] = useState('ولد');
-    const [newLetter, setNewLetter] = useState(''); // Add form
+    const [newLetter, setNewLetter] = useState('');
 
     const ARABIC_LETTERS = [
         "أ", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ", "ر",
@@ -21,12 +22,14 @@ const Dictionary = () => {
 
     const fetchWords = async () => {
         try {
+            setLoading(true);
             const response = await api.get(`/admin/dictionary?category=${category}&letter=${letter}&page=${page}&limit=50`);
-            console.log('API Response:', response.data);
             setWords(response.data.data);
             setTotalPages(response.data.meta.totalPages);
         } catch (error) {
             console.error('Failed to fetch words', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -34,7 +37,6 @@ const Dictionary = () => {
         e.preventDefault();
         if (!newWord) return;
         try {
-            // Default letter to first char if not provided
             const targetLetter = newLetter || newWord.trim().charAt(0);
             await api.post('/admin/dictionary', {
                 word: newWord,
@@ -59,7 +61,6 @@ const Dictionary = () => {
         }
     };
 
-    // Reset page when filters change
     useEffect(() => {
         setPage(1);
     }, [category, letter]);
@@ -69,114 +70,175 @@ const Dictionary = () => {
     }, [category, letter, page]);
 
     return (
-        <div>
-            <div className="page-header">
-                <h1>Dictionary Manager</h1>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                    <select value={category} onChange={e => setCategory(e.target.value)} style={{ width: '200px' }}>
-                        <option value="">All Categories</option>
-                        <option value="ولد">ولد</option>
-                        <option value="بنت">بنت</option>
-                        <option value="حيوان">حيوان</option>
-                        <option value="جماد">جماد</option>
-                        <option value="نبات">نبات</option>
-                        <option value="بلد">بلد</option>
-                        <option value="شخصية مشهورة">شخصية مشهورة</option>
-                    </select>
-
-                    <select value={letter} onChange={e => setLetter(e.target.value)} style={{ width: '100px' }}>
-                        <option value="">All Letters</option>
-                        {ARABIC_LETTERS.map(l => (
-                            <option key={l} value={l}>{l}</option>
-                        ))}
-                    </select>
+        <div className="p-6">
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">Dictionary Manager</h1>
+                    <p className="text-gray-500 mt-1">Manage accepted words and categories</p>
                 </div>
             </div>
 
-            <div className="card">
-                <h3>Add New Word</h3>
-                <form onSubmit={addWord} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                    <input
-                        type="text"
-                        placeholder="Arabic Word"
-                        value={newWord}
-                        onChange={e => setNewWord(e.target.value)}
-                        style={{ flex: 1, minWidth: '200px' }}
-                    />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                {/* Add New Word Card */}
+                <div className="card h-fit">
+                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <Plus className="text-purple-600" size={20} /> Add New Word
+                    </h3>
+                    <form onSubmit={addWord} className="flex flex-col gap-4">
+                        <div>
+                            <label className="text-sm font-bold text-gray-500 mb-1 block">Word</label>
+                            <input
+                                type="text"
+                                placeholder="Arabic Word"
+                                className="input"
+                                value={newWord}
+                                onChange={e => setNewWord(e.target.value)}
+                            />
+                        </div>
 
-                    <select
-                        value={newLetter}
-                        onChange={e => setNewLetter(e.target.value)}
-                        style={{ width: '100px', padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db' }}
-                    >
-                        <option value="">(Auto-detect)</option>
-                        {ARABIC_LETTERS.map(l => (
-                            <option key={l} value={l}>{l}</option>
-                        ))}
-                    </select>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className="text-sm font-bold text-gray-500 mb-1 block">Category</label>
+                                <select
+                                    className="input"
+                                    value={newCategory}
+                                    onChange={e => setNewCategory(e.target.value)}
+                                >
+                                    <option value="ولد">ولد</option>
+                                    <option value="بنت">بنت</option>
+                                    <option value="حيوان">حيوان</option>
+                                    <option value="جماد">جماد</option>
+                                    <option value="نبات">نبات</option>
+                                    <option value="بلد">بلد</option>
+                                    <option value="شخصية مشهورة">شخصية مشهورة</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-sm font-bold text-gray-500 mb-1 block">Letter</label>
+                                <select
+                                    className="input"
+                                    value={newLetter}
+                                    onChange={e => setNewLetter(e.target.value)}
+                                >
+                                    <option value="">(Auto)</option>
+                                    {ARABIC_LETTERS.map(l => (
+                                        <option key={l} value={l}>{l}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        </div>
 
-                    <select
-                        value={newCategory}
-                        onChange={e => setNewCategory(e.target.value)}
-                        style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #d1d5db', minWidth: '150px' }}
-                    >
-                        <option value="ولد">ولد</option>
-                        <option value="بنت">بنت</option>
-                        <option value="حيوان">حيوان</option>
-                        <option value="جماد">جماد</option>
-                        <option value="نبات">نبات</option>
-                        <option value="بلد">بلد</option>
-                        <option value="شخصية مشهورة">شخصية مشهورة</option>
-                    </select>
-                    <button type="submit" className="btn btn-primary"><Plus size={18} /> Add</button>
-                </form>
-            </div>
+                        <button type="submit" className="btn btn-primary justify-center mt-2">
+                            Add Word
+                        </button>
+                    </form>
+                </div>
 
-            <div className="card">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Letter</th>
-                            <th>Word</th>
-                            <th>Category</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {words.map(w => (
-                            <tr key={w.id}>
-                                <td>{w.id}</td>
-                                <td><span className="badge">{w.letter || w.word.charAt(0)}</span></td>
-                                <td>{w.word}</td>
-                                <td>{w.category}</td>
-                                <td>
-                                    <button onClick={() => deleteWord(w.id)} className="btn" style={{ color: 'red' }}>
-                                        <Trash2 size={18} />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                {/* Filters & List */}
+                <div className="lg:col-span-2 flex flex-col gap-6">
+                    <div className="card p-4 flex flex-col sm:flex-row gap-4">
+                        <div className="flex-1 relative">
+                            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                            <select
+                                className="input pl-10"
+                                value={category}
+                                onChange={e => setCategory(e.target.value)}
+                            >
+                                <option value="">All Categories</option>
+                                <option value="ولد">ولد</option>
+                                <option value="بنت">بنت</option>
+                                <option value="حيوان">حيوان</option>
+                                <option value="جماد">جماد</option>
+                                <option value="نبات">نبات</option>
+                                <option value="بلد">بلد</option>
+                                <option value="شخصية مشهورة">شخصية مشهورة</option>
+                            </select>
+                        </div>
+                        <div className="w-full sm:w-40">
+                            <select
+                                className="input"
+                                value={letter}
+                                onChange={e => setLetter(e.target.value)}
+                            >
+                                <option value="">All Letters</option>
+                                {ARABIC_LETTERS.map(l => (
+                                    <option key={l} value={l}>{l}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
 
-                {/* Pagination Controls */}
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '1rem', alignItems: 'center' }}>
-                    <button
-                        className="btn"
-                        disabled={page === 1}
-                        onClick={() => setPage(p => Math.max(1, p - 1))}
-                    >
-                        Previous
-                    </button>
-                    <span>Page {page} of {totalPages}</span>
-                    <button
-                        className="btn"
-                        disabled={page === totalPages}
-                        onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    >
-                        Next
-                    </button>
+                    <div className="card p-0 overflow-hidden flex-1">
+                        <div className="table-container">
+                            {loading ? (
+                                <div className="p-8 text-center text-gray-400">Loading dictionary...</div>
+                            ) : (
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Word</th>
+                                            <th>Category</th>
+                                            <th className="text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {words.length > 0 ? words.map(w => (
+                                            <tr key={w.id}>
+                                                <td className="text-gray-400">#{w.id}</td>
+                                                <td>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 font-bold flex items-center justify-center">
+                                                            {w.letter || w.word.charAt(0)}
+                                                        </span>
+                                                        <span className="font-bold text-gray-700">{w.word}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-bold">
+                                                        {w.category}
+                                                    </span>
+                                                </td>
+                                                <td className="text-right">
+                                                    <button
+                                                        onClick={() => deleteWord(w.id)}
+                                                        className="p-2 rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                                                    >
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        )) : (
+                                            <tr>
+                                                <td colSpan="4" className="text-center py-8 text-gray-400">No words found match your filters.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {totalPages > 1 && (
+                            <div className="p-4 border-t border-gray-100 flex justify-center items-center gap-4 bg-gray-50">
+                                <button
+                                    className="btn btn-secondary text-sm py-1 px-3"
+                                    disabled={page === 1}
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                >
+                                    Previous
+                                </button>
+                                <span className="text-sm font-bold text-gray-600">Page {page} of {totalPages}</span>
+                                <button
+                                    className="btn btn-secondary text-sm py-1 px-3"
+                                    disabled={page === totalPages}
+                                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
@@ -184,5 +246,3 @@ const Dictionary = () => {
 };
 
 export default Dictionary;
-
-

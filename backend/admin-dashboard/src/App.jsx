@@ -16,9 +16,9 @@ const ProtectedLayout = () => {
   if (!token) return <Navigate to="/login" replace />;
 
   return (
-    <div className="app-container">
+    <div className="flex bg-gray-50 min-h-screen">
       <Sidebar />
-      <div className="main-content">
+      <div className="flex-1 ml-64 p-8"> {/* ml-64 matches sidebar w-64 */}
         <Outlet />
       </div>
     </div>

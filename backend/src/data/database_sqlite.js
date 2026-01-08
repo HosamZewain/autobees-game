@@ -192,6 +192,10 @@ function adminUpdateUser(id, { username, email, password, role, wins, losses, to
     }
 }
 
+function deleteUser(id) {
+    db.prepare('DELETE FROM users WHERE id = ?').run(id);
+}
+
 function addWord(word, category, letter = null) {
     const trimmedWord = word.trim();
     const normalizedWord = normalizeArabic(trimmedWord);
@@ -366,6 +370,7 @@ module.exports = {
     getTopPlayers,
     updateUserStatus,
     adminUpdateUser,
+    deleteUser,
     getSettings,
     updateSetting,
     addWord,

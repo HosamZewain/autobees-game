@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext';
 const GameContext = createContext(null);
 
 export const GameProvider = ({ children }) => {
-    const { token, API_URL } = useAuth();
+    const { token, API_URL, user } = useAuth();
 
     const [isPlaying, setIsPlaying] = useState(false);
     const [isValidating, setIsValidating] = useState(false);
@@ -85,7 +85,7 @@ export const GameProvider = ({ children }) => {
             try {
                 await axios.post(`${API_URL}/matches/log`, {
                     details: {
-                        players: [{ name: 'You', score: totalScore }],
+                        players: [{ name: user?.username || 'Guest', score: totalScore }],
                         config: { letter: currentLetter },
                         scores: { solo: totalScore }
                     }
