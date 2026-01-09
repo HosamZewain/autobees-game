@@ -220,105 +220,104 @@ const Profile = () => {
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        <div>
-                            <label className="block text-gray-700 font-bold mb-2 mr-1">تاريخ الميلاد</label>
-                            <div className="relative">
-                                <input
-                                    type="date"
-                                    name="dob"
-                                    value={formData.dob}
-                                    onChange={handleChange}
-                                    className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
-                                />
+                            <div>
+                                <label className="block text-gray-700 font-bold mb-2 mr-1">تاريخ الميلاد</label>
+                                <div className="relative">
+                                    <input
+                                        type="date"
+                                        name="dob"
+                                        value={formData.dob}
+                                        onChange={handleChange}
+                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-700 font-bold mb-2 mr-1">الجنس (اختياري)</label>
+                                <div className="flex gap-4">
+                                    <label className={`flex-1 border-2 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer transition-all ${formData.gender === 'male' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-100 hover:border-gray-200'}`}>
+                                        <input
+                                            type="radio"
+                                            name="gender"
+                                            value="male"
+                                            checked={formData.gender === 'male'}
+                                            onChange={handleChange}
+                                            className="hidden"
+                                        />
+                                        <span className="text-xl">👨</span>
+                                        <span className="font-bold">ذكر</span>
+                                    </label>
+                                    <label className={`flex-1 border-2 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer transition-all ${formData.gender === 'female' ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-gray-100 hover:border-gray-200'}`}>
+                                        <input
+                                            type="radio"
+                                            name="gender"
+                                            value="female"
+                                            checked={formData.gender === 'female'}
+                                            onChange={handleChange}
+                                            className="hidden"
+                                        />
+                                        <span className="text-xl">👩</span>
+                                        <span className="font-bold">أنثى</span>
+                                    </label>
+                                </div>
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-gray-700 font-bold mb-2 mr-1">الجنس (اختياري)</label>
-                            <div className="flex gap-4">
-                                <label className={`flex-1 border-2 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer transition-all ${formData.gender === 'male' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-100 hover:border-gray-200'}`}>
+                        {/* Password Section */}
+                        <div className="pt-6 border-t border-gray-100">
+                            <h3 className="text-lg font-black text-gray-800 mb-4 flex items-center gap-2">
+                                <Lock size={20} className="text-purple-600" />
+                                تغيير كلمة المرور
+                            </h3>
+                            <div className="space-y-4">
+                                <div>
                                     <input
-                                        type="radio"
-                                        name="gender"
-                                        value="male"
-                                        checked={formData.gender === 'male'}
+                                        type="password"
+                                        name="password"
+                                        value={formData.password}
                                         onChange={handleChange}
-                                        className="hidden"
+                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
+                                        placeholder="كلمة المرور الجديدة (اتركه فارغاً للإبقاء عليها)"
                                     />
-                                    <span className="text-xl">👨</span>
-                                    <span className="font-bold">ذكر</span>
-                                </label>
-                                <label className={`flex-1 border-2 rounded-xl p-3 flex items-center justify-center gap-2 cursor-pointer transition-all ${formData.gender === 'female' ? 'border-pink-500 bg-pink-50 text-pink-700' : 'border-gray-100 hover:border-gray-200'}`}>
+                                </div>
+                                <div>
                                     <input
-                                        type="radio"
-                                        name="gender"
-                                        value="female"
-                                        checked={formData.gender === 'female'}
+                                        type="password"
+                                        name="confirmPassword"
+                                        value={formData.confirmPassword}
                                         onChange={handleChange}
-                                        className="hidden"
+                                        className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
+                                        placeholder="تأكيد كلمة المرور"
                                     />
-                                    <span className="text-xl">👩</span>
-                                    <span className="font-bold">أنثى</span>
-                                </label>
+                                </div>
                             </div>
                         </div>
-                </div>
 
-                {/* Password Section */}
-                <div className="pt-6 border-t border-gray-100">
-                    <h3 className="text-lg font-black text-gray-800 mb-4 flex items-center gap-2">
-                        <Lock size={20} className="text-purple-600" />
-                        تغيير كلمة المرور
-                    </h3>
-                    <div className="space-y-4">
-                        <div>
-                            <input
-                                type="password"
-                                name="password"
-                                value={formData.password}
-                                onChange={handleChange}
-                                className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
-                                placeholder="كلمة المرور الجديدة (اتركه فارغاً للإبقاء عليها)"
-                            />
+                        <div className="pt-6">
+                            <button
+                                type="submit"
+                                disabled={isLoading}
+                                className={`w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-purple-200 transform transition-all active:scale-95 flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                        جاري الحفظ...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save size={20} />
+                                        حفظ التعديلات
+                                    </>
+                                )}
+                            </button>
                         </div>
-                        <div>
-                            <input
-                                type="password"
-                                name="confirmPassword"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                className="w-full bg-gray-50 border-2 border-gray-100 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-white transition-all font-bold text-gray-700"
-                                placeholder="تأكيد كلمة المرور"
-                            />
-                        </div>
-                    </div>
+                    </form>
                 </div>
-
-                <div className="pt-6">
-                    <button
-                        type="submit"
-                        disabled={isLoading}
-                        className={`w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black py-4 rounded-xl shadow-lg shadow-purple-200 transform transition-all active:scale-95 flex items-center justify-center gap-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                    >
-                        {isLoading ? (
-                            <>
-                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                                جاري الحفظ...
-                            </>
-                        ) : (
-                            <>
-                                <Save size={20} />
-                                حفظ التعديلات
-                            </>
-                        )}
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
-            </div >
-        </div >
     );
 };
 
