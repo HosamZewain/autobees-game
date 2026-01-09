@@ -127,13 +127,28 @@ async function updateProfile(req, res) {
             return res.status(400).json({ error: 'Email already exists' });
         }
 
+        // Get current user data to fallback for missing fields
+        const { getUserById } = require('../data/database_mysql');
+        const currentUser = await getUserById(userId);
+
         // Hash password if provided
-        let passwordHash = null;
+        let passwordHash = currentUser.password_hash;
         if (password && password.trim() !== "") {
             passwordHash = await bcrypt.hash(password, 10);
         }
 
-        const updatedUser = await updateUserProfile(userId, username, email, passwordHash, dob, gender, profile_pic);
+        // Use new value if provided, otherwise keep existing
+        // For undefined values from request, default to currentUser value
+        const newDob = dob !== undefined ? dob : currentUser.dob;
+        const newGender = gender !== undefined ? gender : currentUser.gender;
+        const newProfilePic = profile_pic !== undefined ? profile_pic : currentUser.profile_pic;
+
+        // Ensure no 'undefined' gets passed to database_mysql
+        const finalDob = newDob || null;
+        const finalGender = newGender || null;
+        const finalProfilePic = newProfilePic || null;
+
+        const updatedUser = await updateUserProfile(userId, username, email, passwordHash, finalDob, finalGender, finalProfilePic);
 
         // Return new token (since username might have changed) and user data
         const token = jwt.sign({ id: updatedUser.id, username: updatedUser.username }, SECRET_KEY, { expiresIn: '7d' });
