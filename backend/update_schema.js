@@ -18,13 +18,22 @@ async function updateSchema() {
     try {
         connection = await mysql.createConnection(dbConfig);
 
-        // Add profile_pic
+        // Add or Modify profile_pic to LONGTEXT (to support 5MB images)
         try {
-            await connection.query("ALTER TABLE users ADD COLUMN profile_pic TEXT");
-            console.log('Added profile_pic column.');
+            // First try to add, if fails, try to modify
+            try {
+                await connection.query("ALTER TABLE users ADD COLUMN profile_pic LONGTEXT");
+                console.log('Added profile_pic column (LONGTEXT).');
+            } catch (e) {
+                if (e.code === 'ER_DUP_FIELDNAME') {
+                    console.log('profile_pic exists, changing to LONGTEXT...');
+                    await connection.query("ALTER TABLE users MODIFY COLUMN profile_pic LONGTEXT");
+                    console.log('Updated profile_pic to LONGTEXT.');
+                }
+                else throw e;
+            }
         } catch (e) {
-            if (e.code === 'ER_DUP_FIELDNAME') console.log('profile_pic already exists.');
-            else console.error('Error adding profile_pic:', e.message);
+            console.error('Error handling profile_pic:', e.message);
         }
 
         // Add gender
