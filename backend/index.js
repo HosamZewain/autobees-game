@@ -61,6 +61,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 adminRouter.get('/dictionary/stats', adminController.getDictionaryStats);
 adminRouter.get('/dictionary', adminController.getDictionary);
 adminRouter.post('/dictionary', adminController.addWord);
+adminRouter.get('/dictionary/export', adminController.exportWords);
 adminRouter.post('/dictionary/import', upload.single('file'), adminController.importWords);
 adminRouter.delete('/dictionary/:id', adminController.deleteWord);
 adminRouter.get('/history', adminController.getMatchHistory);

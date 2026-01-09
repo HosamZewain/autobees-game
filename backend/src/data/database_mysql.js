@@ -308,6 +308,13 @@ async function getDictionaryStats() {
     };
 }
 
+async function getAllDictionaryWords() {
+    const [rows] = await pool.execute('SELECT word, category, letter FROM dictionary ORDER BY category, word');
+    return rows;
+}
+
+
+
 async function deleteWord(id) {
     await pool.execute('DELETE FROM dictionary WHERE id = ?', [id]);
 }
@@ -492,6 +499,7 @@ module.exports = {
     deleteContactMessage,
     getAdminStats,
     getDictionaryStats,
+    getAllDictionaryWords,
     bulkAddWords,
     approveSuggestionsBulk,
     deletePendingWordsBulk
