@@ -16,7 +16,6 @@ const Profile = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        confirmPassword: '',
         dob: '',
         gender: '',
         profile_pic: ''
@@ -31,7 +30,6 @@ const Profile = () => {
             setFormData(prev => ({
                 ...prev,
                 username: user.username || '',
-                email: user.email || '',
                 email: user.email || '',
                 dob: user.dob ? user.dob.split('T')[0] : '', // Format for date input
                 gender: user.gender || '',
@@ -106,7 +104,6 @@ const Profile = () => {
 
             const payload = {
                 username: formData.username,
-                email: formData.email,
                 email: formData.email,
                 dob: formData.dob,
                 gender: formData.gender,
