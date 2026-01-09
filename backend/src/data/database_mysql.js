@@ -293,6 +293,19 @@ async function getDictionary(category = null, letter = null, page = 1, limit = 5
     };
 }
 
+async function getDictionaryStats() {
+    // Count by Category
+    const [categoryRows] = await pool.execute('SELECT category, COUNT(*) as count FROM dictionary GROUP BY category ORDER BY count DESC');
+
+    // Count by Letter
+    const [letterRows] = await pool.execute('SELECT letter, COUNT(*) as count FROM dictionary WHERE letter IS NOT NULL GROUP BY letter ORDER BY letter ASC');
+
+    return {
+        byCategory: categoryRows,
+        byLetter: letterRows
+    };
+}
+
 async function deleteWord(id) {
     await pool.execute('DELETE FROM dictionary WHERE id = ?', [id]);
 }
@@ -477,6 +490,7 @@ module.exports = {
     deleteContactMessage,
     getAdminStats,
     getAdminStats,
+    getDictionaryStats,
     bulkAddWords,
     approveSuggestionsBulk,
     deletePendingWordsBulk

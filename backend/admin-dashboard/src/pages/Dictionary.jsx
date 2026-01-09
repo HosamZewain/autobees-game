@@ -9,6 +9,8 @@ const Dictionary = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [stats, setStats] = useState({ byCategory: [], byLetter: [] });
+    const [showStats, setShowStats] = useState(false);
 
     const [newWord, setNewWord] = useState('');
     const [newCategory, setNewCategory] = useState('ولد');
@@ -33,6 +35,15 @@ const Dictionary = () => {
         }
     };
 
+    const fetchStats = async () => {
+        try {
+            const response = await api.get('/admin/dictionary/stats');
+            setStats(response.data);
+        } catch (error) {
+            console.error('Failed to fetch stats', error);
+        }
+    };
+
     const addWord = async (e) => {
         e.preventDefault();
         if (!newWord) return;
@@ -46,6 +57,7 @@ const Dictionary = () => {
             setNewWord('');
             setNewLetter('');
             fetchWords();
+            fetchStats();
         } catch (error) {
             alert('Failed to add word');
         }
@@ -71,6 +83,7 @@ const Dictionary = () => {
 
             alert(`Import Successful!\nAdded: ${response.data.added}\nIgnored (Duplicates): ${response.data.ignored}`);
             fetchWords();
+            fetchStats();
         } catch (error) {
             console.error('Import failed', error);
             alert('Import Failed: ' + (error.response?.data?.error || error.message));
@@ -85,6 +98,7 @@ const Dictionary = () => {
         try {
             await api.delete(`/admin/dictionary/${id}`);
             fetchWords();
+            fetchStats();
         } catch (error) {
             alert('Failed to delete word');
         }
@@ -98,6 +112,10 @@ const Dictionary = () => {
         fetchWords();
     }, [category, letter, page]);
 
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
     return (
         <div className="p-6">
             <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -106,6 +124,56 @@ const Dictionary = () => {
                     <p className="text-gray-500 mt-1">Manage accepted words and categories</p>
                 </div>
             </div>
+
+            {/* Stats Toggle */}
+            <div className="mb-6">
+                <button
+                    onClick={() => setShowStats(!showStats)}
+                    className="flex items-center gap-2 text-purple-600 font-bold hover:text-purple-800 transition-colors"
+                >
+                    {showStats ? 'Hide Statistics' : 'Show Statistics'}
+                </button>
+            </div>
+
+            {showStats && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 animate-fade-in">
+                    {/* Category Stats */}
+                    <div className="card">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4">Words by Category</h3>
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        <th className="px-4 py-2">Category</th>
+                                        <th className="px-4 py-2 text-right">Count</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {stats.byCategory.map((item, index) => (
+                                        <tr key={index} className="hover:bg-gray-50 transition-colors">
+                                            <td className="px-4 py-2 text-sm font-medium text-gray-700">{item.category}</td>
+                                            <td className="px-4 py-2 text-sm font-bold text-purple-600 text-right">{item.count}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Letter Stats */}
+                    <div className="card">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4">Words by Letter</h3>
+                        <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                            {stats.byLetter.map((item, index) => (
+                                <div key={index} className="flex flex-col items-center p-2 rounded-lg bg-gray-50 border border-gray-100 hover:border-purple-200 transition-colors">
+                                    <span className="text-lg font-bold text-gray-800">{item.letter}</span>
+                                    <span className="text-xs font-bold text-purple-600">{item.count}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                 {/* Add New Word Card */}

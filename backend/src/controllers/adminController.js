@@ -110,6 +110,15 @@ exports.getDictionary = async (req, res) => {
     }
 };
 
+exports.getDictionaryStats = async (req, res) => {
+    try {
+        const stats = await db.getDictionaryStats();
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};
+
 exports.addWord = async (req, res) => {
     try {
         const { word, category, letter } = req.body;

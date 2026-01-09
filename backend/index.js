@@ -58,6 +58,7 @@ adminRouter.post('/settings', adminController.updateSettings);
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
+adminRouter.get('/dictionary/stats', adminController.getDictionaryStats);
 adminRouter.get('/dictionary', adminController.getDictionary);
 adminRouter.post('/dictionary', adminController.addWord);
 adminRouter.post('/dictionary/import', upload.single('file'), adminController.importWords);
