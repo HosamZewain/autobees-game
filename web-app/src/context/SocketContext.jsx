@@ -118,6 +118,12 @@ export const SocketProvider = ({ children }) => {
         }
     };
 
+    const syncAnswers = (answers) => {
+        if (socket && currentRoom && currentRoom.status === 'playing') {
+            socket.emit('sync_answers', { roomId: currentRoom.id, answers });
+        }
+    };
+
     const nextRound = () => {
         if (socket && currentRoom) {
             socket.emit('next_round', { roomId: currentRoom.id });
@@ -139,6 +145,7 @@ export const SocketProvider = ({ children }) => {
             closeRoom,
             startGame,
             submitAnswers,
+            syncAnswers,
             nextRound
         }}>
             {children}

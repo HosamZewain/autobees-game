@@ -344,6 +344,20 @@ io.on("connection", (socket) => {
         startRound(roomId);
     });
 
+    // Sync Answers - Updates drafts without closing round
+    socket.on("sync_answers", ({ roomId, answers }) => {
+        const room = rooms.get(roomId);
+        if (!room || room.status !== "playing") return;
+
+        // Initialize answers for this round if not exists
+        if (!room.answers[room.currentRound]) {
+            room.answers[room.currentRound] = {};
+        }
+
+        // Update draft answers
+        room.answers[room.currentRound][socket.id] = answers;
+    });
+
     // Submit Answers - First submission closes round for everyone!
     socket.on("submit_answers", ({ roomId, answers }) => {
         const room = rooms.get(roomId);

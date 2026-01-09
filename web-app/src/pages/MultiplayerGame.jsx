@@ -19,6 +19,7 @@ const MultiplayerGame = () => {
         leaveRoom,
         startGame,
         submitAnswers,
+        syncAnswers,
         nextRound
     } = useSocket();
     const navigate = useNavigate();
@@ -65,11 +66,21 @@ const MultiplayerGame = () => {
         }
     }, [roundResults]);
 
+    // Ref for debouncing sync
+    const syncTimeoutRef = React.useRef(null);
+
     const updateMultiAnswer = (category, value) => {
-        setMultiAnswers(prev => ({
-            ...prev,
-            [category]: value
-        }));
+        setMultiAnswers(prev => {
+            const newAnswers = { ...prev, [category]: value };
+
+            // Debounce sync to server
+            if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+            syncTimeoutRef.current = setTimeout(() => {
+                syncAnswers(newAnswers);
+            }, 500); // Sync every 500ms after last typing
+
+            return newAnswers;
+        });
     };
 
     const handleSubmit = () => {
