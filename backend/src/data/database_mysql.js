@@ -259,6 +259,8 @@ async function getDictionary(category = null, letter = null, page = 1, limit = 5
     let baseQuery = " FROM dictionary WHERE 1=1";
     let params = [];
 
+    console.log(`[getDictionary] Filters - Category: "${category}", Letter: "${letter}"`);
+
     if (category && category !== 'undefined' && category !== '') {
         baseQuery += " AND category = ?";
         params.push(category);
@@ -488,7 +490,6 @@ module.exports = {
     getContactMessages,
     updateContactMessageStatus,
     deleteContactMessage,
-    getAdminStats,
     getAdminStats,
     getDictionaryStats,
     bulkAddWords,
