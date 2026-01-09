@@ -20,7 +20,13 @@ const Login = () => {
 
     const result = await login(email, password);
     if (result.success) {
-      navigate('/play');
+      const pendingRoomId = localStorage.getItem('pendingRoomId');
+      if (pendingRoomId) {
+        localStorage.removeItem('pendingRoomId');
+        navigate(`/play/multiplayer?join=${pendingRoomId}`);
+      } else {
+        navigate('/play');
+      }
     } else {
       setError(result.error);
     }

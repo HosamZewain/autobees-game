@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Timer, Send, Play, Home as HomeIcon, CheckCircle, XCircle,
-    AlertCircle, ArrowRight, Trophy, Clock
+    AlertCircle, ArrowRight, Trophy, Clock, Copy, Link as LinkIcon
 } from 'lucide-react';
 import SEO from '../components/SEO';
 
@@ -333,7 +333,21 @@ const MultiplayerGame = () => {
             <SEO title={`غرفة ${currentRoom.name || currentRoom.id}`} description={`في انتظار اللاعبين في غرفة ${currentRoom.name || currentRoom.id}. كن مستعداً للتحدي!`} />
             <div className="lobby-header-card">
                 <h1 className="text-3xl font-black text-gray-800 mb-2">{currentRoom.config?.name || currentRoom.name || `غرفة ${currentRoom.id}`}</h1>
-                <div className="lobby-id-badge">ID: {currentRoom.id}</div>
+
+                <div className="flex items-center justify-center gap-2 mb-6">
+                    <div className="lobby-id-badge">ID: {currentRoom.id}</div>
+                    <button
+                        onClick={() => {
+                            const link = `${window.location.origin}/join/${currentRoom.id}`;
+                            navigator.clipboard.writeText(link);
+                            // Optional: Show toast
+                            alert('تم نسخ رابط الغرفة!');
+                        }}
+                        className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm font-bold flex items-center gap-1 hover:bg-purple-200 transition-colors"
+                    >
+                        <Copy size={14} /> نسخ الرابط
+                    </button>
+                </div>
 
                 <div className="players-grid-lobby">
                     {currentRoom.players.map(p => (

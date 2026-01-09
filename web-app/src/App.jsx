@@ -22,6 +22,7 @@ import { AuthProvider } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import { GameProvider } from './context/GameContext';
 import { HelmetProvider } from 'react-helmet-async';
+import JoinRoomRedirect from './components/JoinRoomRedirect';
 
 const App = () => {
   return (
@@ -59,6 +60,7 @@ const App = () => {
                         <Route path="/how-to-play" element={<HowToPlay />} />
                         <Route path="/terms" element={<Terms />} />
                         <Route path="/privacy" element={<Privacy />} />
+                        <Route path="/join/:roomId" element={<JoinRoomRedirect />} />
                       </Routes>
                       <Footer />
                     </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { HomeIcon, Plus, LogIn, Users, Info, MessageCircle, UserPlus, Zap } from 'lucide-react';
 import SEO from '../components/SEO';
 
@@ -9,8 +9,20 @@ const MultiplayerLobby = () => {
     const { token } = useAuth();
     const { socket, rooms, currentRoom, onlinePlayers, onlineVisitors, createRoom, joinRoom } = useSocket();
     const navigate = useNavigate();
+    const location = useLocation();
     const [newRoomName, setNewRoomName] = useState('');
     const [roomCode, setRoomCode] = useState('');
+
+    // Check for join param
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const joinId = params.get('join');
+        if (joinId) {
+            joinRoom(joinId);
+            // Clear param
+            navigate(location.pathname, { replace: true });
+        }
+    }, [location, joinRoom, navigate]);
 
     // Redirect if not logged in
     useEffect(() => {
